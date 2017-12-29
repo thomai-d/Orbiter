@@ -54,7 +54,7 @@ namespace Orbiter
             this.menuService = container.GetInstance<IMenuService>();
         }
 
-        protected override async void Start()
+        protected override void Start()
         {
             // Create a basic scene, see StereoApplication
             base.Start();

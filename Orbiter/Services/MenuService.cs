@@ -14,7 +14,7 @@ namespace Orbiter.Services
 
         void Initialize(OrbiterApplication app);
 
-        void ShowMenu(MenuItem menu);
+        Task ShowMenuAsync(MenuItem menu);
 
         void Update(Vector3 headPosition, Quaternion rotation);
     }
@@ -24,6 +24,8 @@ namespace Orbiter.Services
         private OrbiterApplication app;
         private Node menuRoot;
         private MenuItem menuItem;
+
+        private TaskCompletionSource<bool> showMenuTcs { get; set; }
 
         public MenuService()
         {
@@ -37,26 +39,45 @@ namespace Orbiter.Services
             this.SetupDefaultVoiceCommand();
         }
 
-        public void ShowMenu(MenuItem menu)
+        public Task ShowMenuAsync(MenuItem menu)
         {
-            const float voffset = 0.05f;
+            const float voffset = 0.03f;
 
             this.menuItem = menu;
             this.menuRoot = this.app.Scene.CreateChild();
-            var top = 0 - menu.SubItems.Length / 2 * voffset;
+            var top = menu.SubItems.Length / 2 * voffset;
+
+            var backNode = this.menuRoot.CreateChild();
+            var back = backNode.CreateComponent<StaticModel>();
+            back.Model = CoreAssets.Models.Box;
+            back.ViewMask = 0x80000000; //hide from raycasts
+            back.SetMaterial(Material.FromColor(new Color(0.2f, 0.2f, 0.2f)));
+            backNode.Translate(new Vector3(0, 0, 0.01f));
 
             var commands = new Dictionary<string, Action>();
 
+            var maxWidth = 0f;
             int n = 0;
-            foreach (var item in menu.SubItems.Reverse())
+            maxWidth = Math.Max(maxWidth, this.AddItem(top, this.menuItem, isHeadline: true));
+
+            foreach (var item in menu.SubItems)
             {
-                this.AddItem(top + ++n * voffset, item, n);
+                maxWidth = Math.Max(maxWidth, this.AddItem(top - ++n * voffset, item));
 
                 if (!string.IsNullOrEmpty(item.VoiceCommand))
                     commands.Add(item.VoiceCommand, () => this.OnItemSelected(item));
             }
 
+            backNode.ScaleNode(new Vector3(maxWidth + 0.2f, voffset * 4, 0.01f));
+
             this.app.RegisterCortanaCommands(commands);
+
+            if (this.showMenuTcs == null)
+            {
+                this.showMenuTcs = new TaskCompletionSource<bool>(null, TaskCreationOptions.RunContinuationsAsynchronously);
+            }
+
+            return this.showMenuTcs.Task;
         }
 
         public void Update(Vector3 headPosition, Quaternion rotation)
@@ -78,44 +99,38 @@ namespace Orbiter.Services
             if (!item.HasSubItems)
             {
                 this.SetupDefaultVoiceCommand();
+                this.showMenuTcs.SetResult(true);
+                this.showMenuTcs = null;
                 return;
             }
 
-            this.ShowMenu(item);
+            this.ShowMenuAsync(item);
         }
 
-        private void AddItem(float offset, MenuItem item, int id)
+        private float AddItem(float offset, MenuItem item, bool isHeadline = false)
         {
             var text = new Text3D();
             var position = new Vector3(0, offset, 0);
             var textNode = this.menuRoot.CreateChild();
-            textNode.Name = id.ToString();
 
             var text3D = textNode.CreateComponent<Text3D>();
             text3D.HorizontalAlignment = HorizontalAlignment.Center;
             text3D.VerticalAlignment = VerticalAlignment.Center;
             text3D.ViewMask = 0x80000000; //hide from raycasts
             text3D.Text = item.Title;
-            text3D.SetFont(CoreAssets.Fonts.AnonymousPro, 30);
+            text3D.SetFont(CoreAssets.Fonts.AnonymousPro, isHeadline ? 30 : 25);
             text3D.SetColor(Color.White);
             textNode.Translate(position);
             textNode.SetScale(0.1f);
-            this.menuRoot.AddChild(textNode);
-        }
 
-        private void OnMainMenu()
-        {
-            if (this.MainMenu == null)
-                return;
-
-            this.ShowMenu(this.MainMenu);
+            return text3D.BoundingBox.Size.X * 0.1f;
         }
 
         private void SetupDefaultVoiceCommand()
         {
             var cmds = new Dictionary<string, Action>
             {
-                { "Hey", this.OnMainMenu }
+                { "Hey", () => { if (this.MainMenu != null) this.ShowMenuAsync(this.MainMenu); } }
             };
 
             this.app.RegisterCortanaCommands(cmds);
