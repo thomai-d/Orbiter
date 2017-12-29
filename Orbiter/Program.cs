@@ -7,6 +7,8 @@ using Urho.SharpReality;
 using Urho.Shapes;
 using Urho.Resources;
 using Urho.Gui;
+using LightInject;
+using Orbiter.Services;
 
 namespace Orbiter
 {
@@ -15,24 +17,15 @@ namespace Orbiter
         [MTAThread]
         static void Main()
         {
-            var appViewSource = new UrhoAppViewSource<OribterApplication>(new ApplicationOptions("Data"));
-            appViewSource.UrhoAppViewCreated += OnViewCreated;
+            var appViewSource = new UrhoAppViewSource<OrbiterApplication>(new ApplicationOptions("Data"));
             CoreApplication.Run(appViewSource);
-        }
-
-        static void OnViewCreated(UrhoAppView view)
-        {
-            view.WindowIsSet += View_WindowIsSet;
-        }
-
-        static void View_WindowIsSet(Windows.UI.Core.CoreWindow coreWindow)
-        {
-            // you can subscribe to CoreWindow events here
         }
     }
 
-    public class OribterApplication : StereoApplication
+    public class OrbiterApplication : StereoApplication
     {
+        private readonly IMenuService menuService;
+
         private List<Node> uiTextNodes = new List<Node>();
 
         private void AddText(string text, float x, float y, float z)
@@ -53,7 +46,13 @@ namespace Orbiter
 
         Node earthNode;
 
-        public OribterApplication(ApplicationOptions opts) : base(opts) { }
+        public OrbiterApplication(ApplicationOptions opts) : base(opts)
+        {
+            var container = new ServiceContainer();
+            container.Register<IMenuService, MenuService>(new PerContainerLifetime());
+
+            this.menuService = container.GetInstance<IMenuService>();
+        }
 
         protected override async void Start()
         {
@@ -88,18 +87,41 @@ namespace Orbiter
 
             // Run a few actions to spin the Earth, the Moon and the clouds.
             earthNode.RunActions(new RepeatForever(new RotateBy(duration: 1f, deltaAngleX: 0, deltaAngleY: -4, deltaAngleZ: 0)));
-            //await TextToSpeech("Hello world from UrhoSharp!");
 
             for (int x = -3; x <= 3; x++)
                 for (int y = 0; y <= 2; y++)
                     for (int z = -3; z <= 3; z++)
                         this.AddText($"{x}/{y}/{z}", x, y, z);
+
+            this.menuService.Initialize(this);
+
+            this.menuService.MainMenu = new MenuItem("Menu", string.Empty, new MenuItem[]
+            {
+                new MenuItem("Next", "next", new MenuItem[]
+                {
+                    new MenuItem("Ok", () => { this.Say("Yes"); }, "ok"),
+                }),
+
+                new MenuItem("Exit", () => { this.Say("Exit"); }, "Exit")
+            });
+        }
+
+        public new void RegisterCortanaCommands(Dictionary<string, Action> actions)
+        {
+            base.RegisterCortanaCommands(actions);
+        }
+
+        public void Say(string text)
+        {
+            this.TextToSpeech(text);
         }
 
         protected override void OnUpdate(float timeStep)
         {
             base.OnUpdate(timeStep);
-            
+
+            this.menuService.Update(LeftCamera.Node.WorldPosition, LeftCamera.Node.Rotation);
+
             foreach (var textNode in this.uiTextNodes)
                 textNode.LookAt(2 * textNode.WorldPosition - LeftCamera.Node.WorldPosition, Vector3.UnitY, TransformSpace.World);
         }
@@ -107,16 +129,22 @@ namespace Orbiter
         // For HL optical stabilization (optional)
         public override Vector3 FocusWorldPoint => earthNode.WorldPosition;
 
-        //Handle input:
-
         Vector3 earthPosBeforeManipulations;
         public override void OnGestureManipulationStarted() => earthPosBeforeManipulations = earthNode.Position;
         public override void OnGestureManipulationUpdated(Vector3 relativeHandPosition) =>
             earthNode.Position = relativeHandPosition + earthPosBeforeManipulations;
 
+        private RayQueryResult? Raycast()
+        {
+            Ray cameraRay = LeftCamera.GetScreenRay(0.5f, 0.5f);
+            return Scene.GetComponent<Octree>().RaycastSingle(cameraRay, RayQueryLevel.Triangle, 100, DrawableFlags.Geometry, 0x70000000);
+        }
+
         public override void OnGestureTapped()
         {
-        
+            var ray = Raycast();
+            if (!ray.HasValue)
+                return;
         }
 
         public override void OnGestureDoubleTapped()
