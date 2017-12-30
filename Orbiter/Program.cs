@@ -26,22 +26,21 @@ namespace Orbiter
 
     public class OrbiterApplication : StereoApplication
     {
-        private readonly IMenuService menuService;
         private readonly IGridService gridService;
         private readonly IFocusManager focusManager;
         private readonly ServiceContainer container;
+
+        private OnScreenMenu mainMenu;
 
         private PlanetManager planetManager;
 
         public OrbiterApplication(ApplicationOptions opts) : base(opts)
         {
             this.container = new ServiceContainer();
-            this.container.Register<IMenuService, MenuService>(new PerContainerLifetime());
             this.container.Register<IGridService, GridService>(new PerContainerLifetime());
             this.container.Register<IFocusManager, FocusManager>(new PerContainerLifetime());
             this.container.Register<PlanetManager>(new PerContainerLifetime());
 
-            this.menuService = this.container.GetInstance<IMenuService>();
             this.gridService = this.container.GetInstance<IGridService>();
             this.focusManager = this.container.GetInstance<IFocusManager>();
         }
@@ -56,16 +55,25 @@ namespace Orbiter
             DirectionalLight.Brightness = 1f;
             DirectionalLight.Node.SetDirection(new Vector3(-1, 0, 0.5f));
 
+            this.SetupMenu();
+
             var planetsNode = Scene.CreateChild();
 
             this.planetManager = this.container.GetInstance<PlanetManager>();
             planetsNode.AddComponent(this.planetManager);
 
+            // TODO remove initialize methods
             this.planetManager.Initialize(this);
-            this.menuService.Initialize(this);
             this.gridService.Initialize(this);
+        }
 
-            this.menuService.MainMenu = new MenuItem("Menu", string.Empty, new MenuItem[]
+        private void SetupMenu()
+        {
+            var menuNode = Scene.CreateChild();
+            this.mainMenu = menuNode.CreateComponent<OnScreenMenu>();
+            this.mainMenu.Initialize(this);
+
+            this.mainMenu.MainMenu = new MenuItem("Menu", string.Empty, new MenuItem[]
             {
                 new MenuItem("Add planet", () => this.planetManager.AddNewPlanet(), "add planet"),
                 new MenuItem("Toggle grid", () => { this.gridService.GridVisibility = !this.gridService.GridVisibility; }, "toggle grid"),
@@ -87,7 +95,6 @@ namespace Orbiter
         {
             base.OnUpdate(timeStep);
 
-            this.menuService.OnUpdate();
             this.gridService.OnUpdate();
         }
 
@@ -127,7 +134,7 @@ namespace Orbiter
             this.isManipulating = true;
 
             var cameraVector = this.LeftCamera.Node.Position - this.cameraStartPos;
-            var relLocalPos = Quaternion.Invert(this.LeftCamera.Node.Rotation) * relGlobalPos - cameraVector;
+            var relLocalPos = Quaternion.Invert(this.LeftCamera.Node.Rotation) * (relGlobalPos - cameraVector);
 
             this.focusManager.Manipulate(relGlobalPos, relLocalPos, relLocalPos - this.lastManipulationVector);
             this.lastManipulationVector = relLocalPos;

@@ -6,40 +6,34 @@ using System.Text;
 using System.Threading.Tasks;
 using Urho;
 using Urho.Actions;
+using Urho.Audio;
 using Urho.Gui;
 
 namespace Orbiter.Services
 {
-    public interface IMenuService
-    {
-        MenuItem MainMenu { get; set; }
-
-        void Initialize(OrbiterApplication app);
-
-        Task ShowMenuAsync(MenuItem menu);
-
-        void OnUpdate();
-    }
-
-    public class MenuService : IMenuService
+    public class OnScreenMenu : Component
     {
         private MovingAverage averageLocation = new MovingAverage(30);
         private OrbiterApplication app;
         private Node menuRoot;
         private MenuItem menuItem;
+        private SoundSource soundSource;
 
         private TaskCompletionSource<bool> showMenuTcs { get; set; }
 
-        public MenuService()
-        {
-        }
-
         public MenuItem MainMenu { get; set; }
+
+        public OnScreenMenu()
+        {
+            this.ReceiveSceneUpdates = true;
+        }
 
         public void Initialize(OrbiterApplication app)
         {
             this.app = app;
             this.SetupDefaultVoiceCommand();
+
+            this.soundSource = this.Node.CreateComponent<SoundSource>();
         }
 
         public Task ShowMenuAsync(MenuItem menu)
@@ -75,8 +69,10 @@ namespace Orbiter.Services
 
             this.app.RegisterCortanaCommands(commands);
 
+            // TODO Sound files in static class
             if (this.showMenuTcs == null)
             {
+                this.soundSource.Play(Application.ResourceCache.GetSound("Sound\\Yay.wav"));
                 this.showMenuTcs = new TaskCompletionSource<bool>(null, TaskCreationOptions.RunContinuationsAsynchronously);
             }
 
@@ -86,7 +82,7 @@ namespace Orbiter.Services
             return this.showMenuTcs.Task;
         }
 
-        public void OnUpdate()
+        protected override void OnUpdate(float timeStep)
         {
             if (this.menuRoot == null)
                 return;
@@ -101,6 +97,8 @@ namespace Orbiter.Services
 
         private void OnItemSelected(MenuItem item)
         {
+            this.soundSource.Play(Application.ResourceCache.GetSound("Sound\\Select.wav"));
+
             item.Execute();
 
             this.app.Scene.RemoveChild(this.menuRoot);

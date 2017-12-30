@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Urho;
+using Urho.Audio;
 
 namespace Orbiter.Components
 {
@@ -21,7 +22,7 @@ namespace Orbiter.Components
 
         private Node tempPlanetNode;
         private OrbiterApplication app;
-
+        private SoundSource soundSource;
         private List<Planet> planets = new List<Planet>();
         private MovingAverage averageLocation = new MovingAverage(25);
 
@@ -37,6 +38,9 @@ namespace Orbiter.Components
         public void Initialize(OrbiterApplication app)
         {
             this.app = app;
+
+            this.soundSource = this.Node.CreateComponent<SoundSource>();
+            this.soundSource.Gain = 1.0f;
         }
 
         public void AddNewPlanet()
@@ -61,6 +65,7 @@ namespace Orbiter.Components
         public void PlacePlanet()
         {
             this.tempPlanetNode = null;
+            this.soundSource.Play(Application.ResourceCache.GetSound("Sound\\Create.wav"));
         }
 
         protected override void OnUpdate(float timeStep)
@@ -74,7 +79,6 @@ namespace Orbiter.Components
             var rotation = this.app.LeftCamera.Node.Rotation;
 
             averageLocation.AddSample(headPosition + (rotation * new Vector3(0, 0, this.distance)));
-            Debug.WriteLine(this.distance);
             this.tempPlanetNode.SetWorldPosition(averageLocation.Average);
             this.tempPlanetNode.SetWorldRotation(rotation);
         }
@@ -94,6 +98,10 @@ namespace Orbiter.Components
 
         public void Manipulate(Vector3 relGlobal, Vector3 relCamera, Vector3 relCameraDiff)
         {
+            // Don't manipulate if no planet is about to be placed.
+            if (this.tempPlanetNode == null)
+                return;
+
             this.distance = Math.Min(Math.Max(MinDistance, distance + relCameraDiff.Z * ManipulateBoostFactor), MaxDistance);
         }
     }
