@@ -9,6 +9,7 @@ using Urho.Resources;
 using Urho.Gui;
 using LightInject;
 using Orbiter.Services;
+using Orbiter.Components;
 
 namespace Orbiter
 {
@@ -27,7 +28,7 @@ namespace Orbiter
         private readonly IMenuService menuService;
         private readonly IGridService gridService;
 
-        Node earthNode;
+        private PlanetManager planets;
 
         public OrbiterApplication(ApplicationOptions opts) : base(opts)
         {
@@ -41,48 +42,24 @@ namespace Orbiter
 
         protected override void Start()
         {
-            // Create a basic scene, see StereoApplication
             base.Start();
 
-            // Enable input
             EnableGestureManipulation = true;
             EnableGestureTapped = true;
 
-            // Create a node for the Earth
-            earthNode = Scene.CreateChild();
-            earthNode.Position = new Vector3(0, 0, 1.5f); //1.5m away
-            earthNode.SetScale(0.3f); //D=30cm
-
-            // Scene has a lot of pre-configured components, such as Cameras (eyes), Lights, etc.
             DirectionalLight.Brightness = 1f;
             DirectionalLight.Node.SetDirection(new Vector3(-1, 0, 0.5f));
 
-            //Sphere is just a StaticModel component with Sphere.mdl as a Model.
-            var earth = earthNode.CreateComponent<Sphere>();
-            earth.Material = Material.FromImage("Textures/Earth.jpg");
-
-            var moonNode = earthNode.CreateChild();
-            moonNode.SetScale(0.27f); //27% of the Earth's size
-            moonNode.Position = new Vector3(1.2f, 0, 0);
-
-            // Same as Sphere component:
-            var moon = moonNode.CreateComponent<StaticModel>();
-            moon.Model = CoreAssets.Models.Sphere;
-            moon.Material = Material.FromImage("Textures/Moon.jpg");
-
-            // Run a few actions to spin the Earth, the Moon and the clouds.
-            earthNode.RunActions(new RepeatForever(new RotateBy(duration: 1f, deltaAngleX: 0, deltaAngleY: -4, deltaAngleZ: 0)));
+            var planetsNode = Scene.CreateChild();
+            this.planets = planetsNode.CreateComponent<PlanetManager>();
+            this.planets.Initialize(this);
 
             this.menuService.Initialize(this);
             this.gridService.Initialize(this);
 
             this.menuService.MainMenu = new MenuItem("Menu", string.Empty, new MenuItem[]
             {
-                new MenuItem("Next", "next", new MenuItem[]
-                {
-                    new MenuItem("Ok", () => { this.Say("Yes"); }, "ok"),
-                }),
-
+                new MenuItem("Add planet", () => this.planets.AddNewPlanet(), "add planet"),
                 new MenuItem("Toggle grid", () => { this.gridService.GridVisibility = !this.gridService.GridVisibility; }, "toggle grid"),
                 new MenuItem("Exit", () => { this.Say("Exit"); }, "Exit")
             });
@@ -106,14 +83,6 @@ namespace Orbiter
             this.gridService.OnUpdate();
         }
 
-        // For HL optical stabilization (optional)
-        public override Vector3 FocusWorldPoint => earthNode.WorldPosition;
-
-        Vector3 earthPosBeforeManipulations;
-        public override void OnGestureManipulationStarted() => earthPosBeforeManipulations = earthNode.Position;
-        public override void OnGestureManipulationUpdated(Vector3 relativeHandPosition) =>
-            earthNode.Position = relativeHandPosition + earthPosBeforeManipulations;
-
         private RayQueryResult? Raycast()
         {
             Ray cameraRay = LeftCamera.GetScreenRay(0.5f, 0.5f);
@@ -125,10 +94,6 @@ namespace Orbiter
             var ray = Raycast();
             if (!ray.HasValue)
                 return;
-        }
-
-        public override void OnGestureDoubleTapped()
-        {
         }
     }
 }

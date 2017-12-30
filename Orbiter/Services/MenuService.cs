@@ -81,7 +81,7 @@ namespace Orbiter.Services
             }
 
             this.menuRoot.SetScale(0.0f);
-            this.menuRoot.RunActions(new ScaleTo(0.2f, 1.0f));
+            this.menuRoot.RunActions(new EaseElasticOut(new ScaleTo(0.5f, 1.0f)));
 
             return this.showMenuTcs.Task;
         }
