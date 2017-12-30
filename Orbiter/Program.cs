@@ -25,24 +25,7 @@ namespace Orbiter
     public class OrbiterApplication : StereoApplication
     {
         private readonly IMenuService menuService;
-
-        private List<Node> uiTextNodes = new List<Node>();
-
-        private void AddText(string text, float x, float y, float z)
-        {
-            var position = new Vector3(x, y, z);
-            var textNode = Scene.CreateChild();
-            var text3D = textNode.CreateComponent<Text3D>();
-            text3D.HorizontalAlignment = HorizontalAlignment.Center;
-            text3D.VerticalAlignment = VerticalAlignment.Top;
-            text3D.ViewMask = 0x80000000; //hide from raycasts
-            text3D.Text = text;
-            text3D.SetFont(CoreAssets.Fonts.AnonymousPro, 28);
-            text3D.SetColor(Color.White);
-            textNode.Translate(position);
-            textNode.SetScale(0.1f);
-            this.uiTextNodes.Add(textNode);
-        }
+        private readonly IGridService gridService;
 
         Node earthNode;
 
@@ -50,8 +33,10 @@ namespace Orbiter
         {
             var container = new ServiceContainer();
             container.Register<IMenuService, MenuService>(new PerContainerLifetime());
+            container.Register<IGridService, GridService>(new PerContainerLifetime());
 
             this.menuService = container.GetInstance<IMenuService>();
+            this.gridService = container.GetInstance<IGridService>();
         }
 
         protected override void Start()
@@ -88,12 +73,8 @@ namespace Orbiter
             // Run a few actions to spin the Earth, the Moon and the clouds.
             earthNode.RunActions(new RepeatForever(new RotateBy(duration: 1f, deltaAngleX: 0, deltaAngleY: -4, deltaAngleZ: 0)));
 
-            for (int x = -3; x <= 3; x++)
-                for (int y = 0; y <= 2; y++)
-                    for (int z = -3; z <= 3; z++)
-                        this.AddText($"{x}/{y}/{z}", x, y, z);
-
             this.menuService.Initialize(this);
+            this.gridService.Initialize(this);
 
             this.menuService.MainMenu = new MenuItem("Menu", string.Empty, new MenuItem[]
             {
@@ -102,6 +83,7 @@ namespace Orbiter
                     new MenuItem("Ok", () => { this.Say("Yes"); }, "ok"),
                 }),
 
+                new MenuItem("Toggle grid", () => { this.gridService.GridVisibility = !this.gridService.GridVisibility; }, "toggle grid"),
                 new MenuItem("Exit", () => { this.Say("Exit"); }, "Exit")
             });
         }
@@ -121,9 +103,7 @@ namespace Orbiter
             base.OnUpdate(timeStep);
 
             this.menuService.Update(LeftCamera.Node.WorldPosition, LeftCamera.Node.Rotation);
-
-            foreach (var textNode in this.uiTextNodes)
-                textNode.LookAt(2 * textNode.WorldPosition - LeftCamera.Node.WorldPosition, Vector3.UnitY, TransformSpace.World);
+            this.gridService.OnUpdate();
         }
 
         // For HL optical stabilization (optional)

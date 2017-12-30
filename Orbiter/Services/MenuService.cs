@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Orbiter.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,6 +22,7 @@ namespace Orbiter.Services
 
     public class MenuService : IMenuService
     {
+        private MovingAverage averageLocation = new MovingAverage(30);
         private OrbiterApplication app;
         private Node menuRoot;
         private MenuItem menuItem;
@@ -47,13 +49,6 @@ namespace Orbiter.Services
             this.menuRoot = this.app.Scene.CreateChild();
             var top = menu.SubItems.Length / 2 * voffset;
 
-            var backNode = this.menuRoot.CreateChild();
-            var back = backNode.CreateComponent<StaticModel>();
-            back.Model = CoreAssets.Models.Box;
-            back.ViewMask = 0x80000000; //hide from raycasts
-            back.SetMaterial(Material.FromColor(new Color(0.2f, 0.2f, 0.2f)));
-            backNode.Translate(new Vector3(0, 0, 0.01f));
-
             var commands = new Dictionary<string, Action>();
 
             var maxWidth = 0f;
@@ -68,7 +63,12 @@ namespace Orbiter.Services
                     commands.Add(item.VoiceCommand, () => this.OnItemSelected(item));
             }
 
-            backNode.ScaleNode(new Vector3(maxWidth + 0.2f, voffset * 4, 0.01f));
+            var backNode = this.menuRoot.CreateChild();
+            var back = backNode.CreateComponent<StaticModel>();
+            back.Model = CoreAssets.Models.Box;
+            back.SetMaterial(Material.FromColor(new Color(0.2f, 0.2f, 0.2f, 0.8f)));
+            backNode.Translate(new Vector3(0, -voffset/2, 0.01f));
+            backNode.ScaleNode(new Vector3(maxWidth + 0.2f, voffset * (menu.SubItems.Length + 2), 0.01f));
 
             this.app.RegisterCortanaCommands(commands);
 
@@ -85,7 +85,8 @@ namespace Orbiter.Services
             if (this.menuRoot == null)
                 return;
 
-            this.menuRoot.SetWorldPosition(headPosition + (rotation * new Vector3(0, 0, 1)));
+            averageLocation.AddSample(headPosition + (rotation * new Vector3(0, 0, 1)));
+            this.menuRoot.SetWorldPosition(averageLocation.Average);
             this.menuRoot.SetWorldRotation(rotation);
         }
 
