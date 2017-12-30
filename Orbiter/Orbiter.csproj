@@ -50,6 +50,7 @@
     <Compile Include="Helpers\MovingAverage.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\FocusManager.cs" />
     <Compile Include="Services\GridService.cs" />
     <Compile Include="Services\MenuItem.cs" />
     <Compile Include="Services\MenuService.cs" />

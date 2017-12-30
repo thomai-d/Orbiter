@@ -44,13 +44,13 @@ namespace Orbiter.Services
 
         public Task ShowMenuAsync(MenuItem menu)
         {
-            const float voffset = 0.03f;
+            const float vlineoffset = 0.03f;
 
             this.averageLocation.Reset();
 
             this.menuItem = menu;
             this.menuRoot = this.app.Scene.CreateChild();
-            var top = menu.SubItems.Length / 2 * voffset;
+            var top = menu.SubItems.Length / 2 * vlineoffset;
 
             var commands = new Dictionary<string, Action>();
 
@@ -60,7 +60,7 @@ namespace Orbiter.Services
 
             foreach (var item in menu.SubItems)
             {
-                maxWidth = Math.Max(maxWidth, this.AddItem(top - ++n * voffset, item));
+                maxWidth = Math.Max(maxWidth, this.AddItem(top - ++n * vlineoffset, item));
 
                 if (!string.IsNullOrEmpty(item.VoiceCommand))
                     commands.Add(item.VoiceCommand, () => this.OnItemSelected(item));
@@ -70,8 +70,8 @@ namespace Orbiter.Services
             var back = backNode.CreateComponent<StaticModel>();
             back.Model = CoreAssets.Models.Box;
             back.SetMaterial(Material.FromColor(new Color(0.2f, 0.2f, 0.2f, 0.8f)));
-            backNode.Translate(new Vector3(0, -voffset/2, 0.01f));
-            backNode.ScaleNode(new Vector3(maxWidth + 0.2f, voffset * (menu.SubItems.Length + 2), 0.01f));
+            backNode.Translate(new Vector3(0, -vlineoffset/2, 0.01f));
+            backNode.ScaleNode(new Vector3(maxWidth + 0.2f, vlineoffset * (menu.SubItems.Length + 2), 0.01f));
 
             this.app.RegisterCortanaCommands(commands);
 

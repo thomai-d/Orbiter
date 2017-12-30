@@ -10,6 +10,7 @@ using Urho.Gui;
 using LightInject;
 using Orbiter.Services;
 using Orbiter.Components;
+using System.Diagnostics;
 
 namespace Orbiter
 {
@@ -27,17 +28,22 @@ namespace Orbiter
     {
         private readonly IMenuService menuService;
         private readonly IGridService gridService;
+        private readonly IFocusManager focusManager;
+        private readonly ServiceContainer container;
 
-        private PlanetManager planets;
+        private PlanetManager planetManager;
 
         public OrbiterApplication(ApplicationOptions opts) : base(opts)
         {
-            var container = new ServiceContainer();
-            container.Register<IMenuService, MenuService>(new PerContainerLifetime());
-            container.Register<IGridService, GridService>(new PerContainerLifetime());
+            this.container = new ServiceContainer();
+            this.container.Register<IMenuService, MenuService>(new PerContainerLifetime());
+            this.container.Register<IGridService, GridService>(new PerContainerLifetime());
+            this.container.Register<IFocusManager, FocusManager>(new PerContainerLifetime());
+            this.container.Register<PlanetManager>(new PerContainerLifetime());
 
-            this.menuService = container.GetInstance<IMenuService>();
-            this.gridService = container.GetInstance<IGridService>();
+            this.menuService = this.container.GetInstance<IMenuService>();
+            this.gridService = this.container.GetInstance<IGridService>();
+            this.focusManager = this.container.GetInstance<IFocusManager>();
         }
 
         protected override void Start()
@@ -51,15 +57,17 @@ namespace Orbiter
             DirectionalLight.Node.SetDirection(new Vector3(-1, 0, 0.5f));
 
             var planetsNode = Scene.CreateChild();
-            this.planets = planetsNode.CreateComponent<PlanetManager>();
-            this.planets.Initialize(this);
 
+            this.planetManager = this.container.GetInstance<PlanetManager>();
+            planetsNode.AddComponent(this.planetManager);
+
+            this.planetManager.Initialize(this);
             this.menuService.Initialize(this);
             this.gridService.Initialize(this);
 
             this.menuService.MainMenu = new MenuItem("Menu", string.Empty, new MenuItem[]
             {
-                new MenuItem("Add planet", () => this.planets.AddNewPlanet(), "add planet"),
+                new MenuItem("Add planet", () => this.planetManager.AddNewPlanet(), "add planet"),
                 new MenuItem("Toggle grid", () => { this.gridService.GridVisibility = !this.gridService.GridVisibility; }, "toggle grid"),
                 new MenuItem("Exit", () => { this.Say("Exit"); }, "Exit")
             });
@@ -91,9 +99,50 @@ namespace Orbiter
 
         public override void OnGestureTapped()
         {
+            if (this.isManipulating)
+                return;
+
+            this.focusManager.Tap();
+
             var ray = Raycast();
             if (!ray.HasValue)
                 return;
+        }
+
+        private bool isManipulating = false;
+
+        public override void OnGestureManipulationStarted()
+        {
+            base.OnGestureManipulationStarted();
+            this.lastManipulationVector = Vector3.Zero;
+            this.cameraStartPos = this.LeftCamera.Node.WorldPosition;
+        }
+
+        private Vector3 lastManipulationVector = Vector3.Zero;
+        private Vector3 cameraStartPos = Vector3.Zero;
+        public override void OnGestureManipulationUpdated(Vector3 relGlobalPos)
+        {
+            base.OnGestureManipulationUpdated(relGlobalPos);
+
+            this.isManipulating = true;
+
+            var cameraVector = this.LeftCamera.Node.Position - this.cameraStartPos;
+            var relLocalPos = Quaternion.Invert(this.LeftCamera.Node.Rotation) * relGlobalPos - cameraVector;
+
+            this.focusManager.Manipulate(relGlobalPos, relLocalPos, relLocalPos - this.lastManipulationVector);
+            this.lastManipulationVector = relLocalPos;
+        }
+
+        public override void OnGestureManipulationCompleted(Vector3 relativeHandPosition)
+        {
+            base.OnGestureManipulationCompleted(relativeHandPosition);
+            isManipulating = false;
+        }
+
+        public override void OnGestureManipulationCanceled()
+        {
+            base.OnGestureManipulationCanceled();
+            isManipulating = false;
         }
     }
 }
