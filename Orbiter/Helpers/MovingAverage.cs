@@ -24,6 +24,11 @@ namespace Orbiter.Helpers
                 this.queue.Dequeue();
         }
 
+        public void Reset()
+        {
+            this.queue.Clear();
+        }
+
         public Vector3 Average
         {
             get

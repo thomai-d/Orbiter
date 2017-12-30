@@ -102,7 +102,7 @@ namespace Orbiter
         {
             base.OnUpdate(timeStep);
 
-            this.menuService.Update(LeftCamera.Node.WorldPosition, LeftCamera.Node.Rotation);
+            this.menuService.OnUpdate();
             this.gridService.OnUpdate();
         }
 

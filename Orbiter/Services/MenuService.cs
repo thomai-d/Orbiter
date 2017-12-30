@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Urho;
+using Urho.Actions;
 using Urho.Gui;
 
 namespace Orbiter.Services
@@ -17,7 +18,7 @@ namespace Orbiter.Services
 
         Task ShowMenuAsync(MenuItem menu);
 
-        void Update(Vector3 headPosition, Quaternion rotation);
+        void OnUpdate();
     }
 
     public class MenuService : IMenuService
@@ -44,6 +45,8 @@ namespace Orbiter.Services
         public Task ShowMenuAsync(MenuItem menu)
         {
             const float voffset = 0.03f;
+
+            this.averageLocation.Reset();
 
             this.menuItem = menu;
             this.menuRoot = this.app.Scene.CreateChild();
@@ -77,13 +80,19 @@ namespace Orbiter.Services
                 this.showMenuTcs = new TaskCompletionSource<bool>(null, TaskCreationOptions.RunContinuationsAsynchronously);
             }
 
+            this.menuRoot.SetScale(0.0f);
+            this.menuRoot.RunActions(new ScaleTo(0.2f, 1.0f));
+
             return this.showMenuTcs.Task;
         }
 
-        public void Update(Vector3 headPosition, Quaternion rotation)
+        public void OnUpdate()
         {
             if (this.menuRoot == null)
                 return;
+
+            var headPosition = this.app.LeftCamera.Node.WorldPosition;
+            var rotation = this.app.LeftCamera.Node.Rotation;
 
             averageLocation.AddSample(headPosition + (rotation * new Vector3(0, 0, 1)));
             this.menuRoot.SetWorldPosition(averageLocation.Average);
