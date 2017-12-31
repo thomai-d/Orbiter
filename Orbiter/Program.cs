@@ -50,6 +50,8 @@ namespace Orbiter
         {
             base.Start();
 
+            this.LeftCamera.Node.Name = "MainCamera";
+
             EnableGestureManipulation = true;
             EnableGestureTapped = true;
 
@@ -60,6 +62,9 @@ namespace Orbiter
 
             var physics = this.Scene.GetOrCreateComponent<PhysicsWorld>();
             physics.SetGravity(new Vector3(0, -1f, 0));
+
+            var rocketFactoryNode = this.Scene.CreateChild();
+            this.rocketFactory = rocketFactoryNode.CreateComponent<RocketFactory>();
 
             var planetsNode = Scene.CreateChild();
 
@@ -126,9 +131,7 @@ namespace Orbiter
                 return;
 
             // Do default action.
-            var ball = this.Scene.CreateChild();
-            var rocket = ball.CreateComponent<Rocket>();
-            rocket.Fire(LeftCamera.Node.WorldPosition, LeftCamera.Node.WorldRotation, 3.0f);
+            this.rocketFactory.Fire();
         }
 
         private bool isManipulating = false;
@@ -142,6 +145,8 @@ namespace Orbiter
 
         private Vector3 lastManipulationVector = Vector3.Zero;
         private Vector3 cameraStartPos = Vector3.Zero;
+        private RocketFactory rocketFactory;
+
         public override void OnGestureManipulationUpdated(Vector3 relGlobalPos)
         {
             base.OnGestureManipulationUpdated(relGlobalPos);

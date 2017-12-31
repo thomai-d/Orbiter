@@ -48,6 +48,7 @@
     <Compile Include="Components\Planet.cs" />
     <Compile Include="Components\PlanetManager.cs" />
     <Compile Include="Components\Rocket.cs" />
+    <Compile Include="Components\RocketFactory.cs" />
     <Compile Include="Helpers\MovingAverage.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
