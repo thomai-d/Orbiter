@@ -27,22 +27,19 @@ namespace Orbiter
 
     public class OrbiterApplication : StereoApplication
     {
-        private readonly IGridService gridService;
         private readonly IFocusManager focusManager;
         private readonly ServiceContainer container;
 
         private OnScreenMenu mainMenu;
 
-        private PlanetManager planetManager;
+        private PlanetFactory planetFactory;
 
         public OrbiterApplication(ApplicationOptions opts) : base(opts)
         {
+            // TODO Remove DI
             this.container = new ServiceContainer();
-            this.container.Register<IGridService, GridService>(new PerContainerLifetime());
             this.container.Register<IFocusManager, FocusManager>(new PerContainerLifetime());
-            this.container.Register<PlanetManager>(new PerContainerLifetime());
-
-            this.gridService = this.container.GetInstance<IGridService>();
+            this.container.Register<PlanetFactory>(new PerContainerLifetime());
             this.focusManager = this.container.GetInstance<IFocusManager>();
         }
 
@@ -63,17 +60,13 @@ namespace Orbiter
             var physics = this.Scene.GetOrCreateComponent<PhysicsWorld>();
             physics.SetGravity(new Vector3(0, -1f, 0));
 
-            var rocketFactoryNode = this.Scene.CreateChild();
-            this.rocketFactory = rocketFactoryNode.CreateComponent<RocketFactory>();
+            this.rocketFactory = this.Scene.CreateComponent<RocketFactory>();
 
-            var planetsNode = Scene.CreateChild();
+            this.grid = this.Scene.CreateComponent<Grid>();
 
-            this.planetManager = this.container.GetInstance<PlanetManager>();
-            planetsNode.AddComponent(this.planetManager);
-
-            // TODO remove initialize methods
-            this.planetManager.Initialize(this);
-            this.gridService.Initialize(this);
+            // TODO think about DI...
+            this.planetFactory = this.container.GetInstance<PlanetFactory>();
+            this.Scene.AddComponent(this.planetFactory);
         }
 
         private void SetupMenu()
@@ -84,8 +77,8 @@ namespace Orbiter
 
             this.mainMenu.MainMenu = new MenuItem("Menu", string.Empty, new MenuItem[]
             {
-                new MenuItem("Add planet", () => this.planetManager.AddNewPlanet(), "add planet"),
-                new MenuItem("Toggle grid", () => { this.gridService.GridVisibility = !this.gridService.GridVisibility; }, "toggle grid"),
+                new MenuItem("Add planet", () => this.planetFactory.AddNewPlanet(), "add planet"),
+                new MenuItem("Toggle grid", () => { this.grid.GridVisibility = !this.grid.GridVisibility; }, "toggle grid"),
                 new MenuItem("Exit", () => { this.Say("Exit"); }, "Exit")
             });
         }
@@ -98,13 +91,6 @@ namespace Orbiter
         public void Say(string text)
         {
             this.TextToSpeech(text);
-        }
-
-        protected override void OnUpdate(float timeStep)
-        {
-            base.OnUpdate(timeStep);
-
-            this.gridService.OnUpdate();
         }
 
         private RayQueryResult? Raycast()
@@ -146,6 +132,7 @@ namespace Orbiter
         private Vector3 lastManipulationVector = Vector3.Zero;
         private Vector3 cameraStartPos = Vector3.Zero;
         private RocketFactory rocketFactory;
+        private Grid grid;
 
         public override void OnGestureManipulationUpdated(Vector3 relGlobalPos)
         {

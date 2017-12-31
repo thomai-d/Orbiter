@@ -11,52 +11,63 @@ using Urho.Audio;
 
 namespace Orbiter.Components
 {
-    public class PlanetManager : Component, IFocusElement
+    /// <summary>
+    /// +--Scene
+    ///    +---PlanetFactory (Component)
+    ///    +---"Planets" (Node)
+    ///        +---Node
+    ///            +---Planet (Component)
+    ///        +---Node
+    ///            +---Planet (Component)
+    /// </summary>
+    public class PlanetFactory : Component, IFocusElement
     {
-        public const float ManipulateBoostFactor = 3.0f;
+        public const float ManipulateBoostFactor = 5.0f;
         public const float MinDistance = 0.5f;
         public const float DefaultDistance = 2.0f;
         public const float MaxDistance = 10.0f;
 
         private float distance = DefaultDistance;
 
+        private Node cameraNode;
         private Node tempPlanetNode;
-        private OrbiterApplication app;
         private SoundSource soundSource;
-        private List<Planet> planets = new List<Planet>();
         private MovingAverage averageLocation = new MovingAverage(25);
 
         private IFocusManager focusManager;
+        private Node planetsNode;
 
-        public PlanetManager(IFocusManager focusManager)
+        public PlanetFactory(IFocusManager focusManager)
         {
-            this.focusManager = focusManager;
-
             this.ReceiveSceneUpdates = true;
+            this.focusManager = focusManager;
         }
 
-        public void Initialize(OrbiterApplication app)
+        public override void OnAttachedToNode(Node node)
         {
-            this.app = app;
+            base.OnAttachedToNode(node);
+
+            if (this.Node != this.Scene)
+                throw new InvalidOperationException("PlanetFactory should be attached to the scene");
+
+            this.cameraNode = this.Scene.GetChild("MainCamera", true) 
+                ?? throw new InvalidOperationException("'MainCamera' not found");
 
             this.soundSource = this.Node.CreateComponent<SoundSource>();
             this.soundSource.Gain = 1.0f;
+
+            this.planetsNode = this.Node.CreateChild("Planets");
         }
 
         public void AddNewPlanet()
         {
-            this.tempPlanetNode = this.Node.CreateChild();
-
-            // TODO Use constructor
-            var planet = new Planet();
-            tempPlanetNode.AddComponent(planet);
-
+            this.tempPlanetNode = this.planetsNode.CreateChild();
+            var planet = this.tempPlanetNode.CreateComponent<Planet>();
 
             planet.Initialize(PlanetType.Earth);
             planet.Position = new Vector3(0, 0, this.distance);
             planet.Size = 0.3f;
 
-            this.planets.Add(planet);
             this.focusManager.SetFocus(this);
 
             this.averageLocation.Reset();
@@ -76,8 +87,8 @@ namespace Orbiter.Components
             if (this.tempPlanetNode == null)
                 return;
             
-            var headPosition = this.app.LeftCamera.Node.WorldPosition;
-            var rotation = this.app.LeftCamera.Node.Rotation;
+            var headPosition = this.cameraNode.WorldPosition;
+            var rotation = this.cameraNode.Rotation;
 
             averageLocation.AddSample(headPosition + (rotation * new Vector3(0, 0, this.distance)));
             this.tempPlanetNode.SetWorldPosition(averageLocation.Average);

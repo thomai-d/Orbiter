@@ -9,7 +9,7 @@ using Urho.Actions;
 using Urho.Audio;
 using Urho.Gui;
 
-namespace Orbiter.Services
+namespace Orbiter.Components
 {
     public class OnScreenMenu : Component
     {

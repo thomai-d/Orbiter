@@ -12,9 +12,6 @@ namespace Orbiter.Components
 {
     public class Rocket : Component
     {
-        private RigidBody rigidBody;
-        private SoundSource soundSource;
-
         public Rocket()
         {
             this.ReceiveSceneUpdates = true;

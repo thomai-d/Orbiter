@@ -6,34 +6,37 @@ using System.Threading.Tasks;
 using Urho;
 using Urho.Gui;
 
-namespace Orbiter.Services
+namespace Orbiter.Components
 {
-    public interface IGridService
+    public class Grid : Component
     {
-        void Initialize(OrbiterApplication app);
-
-        void OnUpdate();
-
-        bool GridVisibility { get; set; }
-    }
-
-    public class GridService : IGridService
-    {
-        private readonly List<Node> uiTextNodes = new List<Node>();
-
         private bool isVisible = false;
+        private Node cameraNode;
+        private Node gridRoot;
 
-        private OrbiterApplication app;
-
-        public void Initialize(OrbiterApplication app)
+        public Grid()
         {
-            this.app = app;
+            this.ReceiveSceneUpdates = true;
         }
 
-        public void OnUpdate()
+        public override void OnAttachedToNode(Node node)
         {
-            foreach (var textNode in this.uiTextNodes)
-                textNode.LookAt(2 * textNode.WorldPosition - this.app.LeftCamera.Node.WorldPosition, Vector3.UnitY, TransformSpace.World);
+            if (this.Node != this.Scene)
+                throw new InvalidOperationException("PlanetFactory should be attached to the scene");
+
+            this.cameraNode = this.Scene.GetChild("MainCamera", true) 
+                ?? throw new InvalidOperationException("'MainCamera' not found");
+
+            base.OnAttachedToNode(node);
+            this.gridRoot = this.Node.CreateChild();
+        }
+
+        protected override void OnUpdate(float timeStep)
+        {
+            base.OnUpdate(timeStep);
+
+            foreach (var textNode in this.gridRoot.Children)
+                textNode.LookAt(2 * textNode.WorldPosition - this.cameraNode.WorldPosition, Vector3.UnitY, TransformSpace.World);
         }
 
         public bool GridVisibility
@@ -54,10 +57,8 @@ namespace Orbiter.Services
                 }
                 else
                 {
-                    foreach (var c in this.uiTextNodes)
-                        this.app.Scene.RemoveChild(c);
-
-                    this.uiTextNodes.Clear();
+                    foreach (var c in this.gridRoot.Children)
+                        this.gridRoot.RemoveChild(c);
                 }
 
                 this.isVisible = value;
@@ -67,7 +68,7 @@ namespace Orbiter.Services
         private void AddText(string text, float x, float y, float z)
         {
             var position = new Vector3(x, y, z);
-            var textNode = this.app.Scene.CreateChild();
+            var textNode = this.gridRoot.CreateChild();
             var text3D = textNode.CreateComponent<Text3D>();
             text3D.HorizontalAlignment = HorizontalAlignment.Center;
             text3D.VerticalAlignment = VerticalAlignment.Top;
@@ -76,8 +77,7 @@ namespace Orbiter.Services
             text3D.SetFont(CoreAssets.Fonts.AnonymousPro, 28);
             text3D.SetColor(Color.White);
             textNode.Translate(position);
-            textNode.SetScale(0.1f);
-            this.uiTextNodes.Add(textNode);
+            textNode.SetScale(0.05f);
         }
     }
 }

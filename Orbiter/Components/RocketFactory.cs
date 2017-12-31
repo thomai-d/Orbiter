@@ -11,41 +11,58 @@ using Urho.Shapes;
 namespace Orbiter.Components
 {
     /// <summary>
-    /// Scene
-    ///   +---RocketFactoryNode
-    ///         +---RocketFactory (Component)
-    ///         +---RocketNode
-    ///               +---Rocket (Component)
-    ///         +---RocketNode
-    ///               +---Rocket (Component)
+    /// +--Scene
+    ///    +---RocketFactory (Component)
+    ///    +---"Rockets" (Node)
+    ///        +---Node
+    ///            +---Rocket (Component)
+    ///        +---Node
+    ///            +---Rocket (Component)
     /// </summary>
     public class RocketFactory : Component
     {
-        private readonly List<Node> rocketNodes = new List<Node>();
-
         private SoundSource soundSource;
         private Node cameraNode;
+        private Node rocketsNode;
+
+        public RocketFactory()
+        {
+            this.ReceiveSceneUpdates = true;
+        }
 
         public override void OnAttachedToNode(Node node)
         {
             base.OnAttachedToNode(node);
 
-            this.cameraNode = this.Scene.GetChild("MainCamera", true);
-            if (this.cameraNode == null)
-                throw new InvalidOperationException("'MainCamera' not found");
+            if (this.Node != this.Scene)
+                throw new InvalidOperationException("RocketFactory should be attached to the scene");
+
+            this.cameraNode = this.Scene.GetChild("MainCamera", true) 
+                ?? throw new InvalidOperationException("'MainCamera' not found");
+
+            this.rocketsNode = this.Node.CreateChild("Rockets");
 
             this.soundSource = this.Node.CreateComponent<SoundSource>();
             this.soundSource.Gain = 1.0f;
+        }
+
+        protected override void OnUpdate(float timeStep)
+        {
+            base.OnUpdate(timeStep);
+
+            foreach (var rocketNode in this.rocketsNode.Children)
+            {
+                var rigidBody = rocketNode.GetComponent<RigidBody>();
+            }
         }
 
         public void Fire()
         {
             this.soundSource.Play(Application.ResourceCache.GetSound("Sound\\Arrow1.wav"));
 
-            var rocketNode = this.Node.CreateChild();
+            var rocketNode = this.rocketsNode.CreateChild();
             rocketNode.SetWorldPosition(this.cameraNode.WorldPosition + this.cameraNode.Rotation * new Vector3(0, 0, 0.5f));
             rocketNode.SetWorldRotation(this.cameraNode.Rotation);
-            this.rocketNodes.Add(rocketNode);
 
             var rocket = rocketNode.CreateComponent<Rocket>();
             var rigidBody = rocketNode.CreateComponent<RigidBody>();

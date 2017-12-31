@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Orbiter.Services
+namespace Orbiter.Components
 {
     public class MenuItem
     {

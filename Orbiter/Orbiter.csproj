@@ -46,7 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Components\Planet.cs" />
-    <Compile Include="Components\PlanetManager.cs" />
+    <Compile Include="Components\PlanetFactory.cs" />
     <Compile Include="Components\Rocket.cs" />
     <Compile Include="Components\RocketFactory.cs" />
     <Compile Include="Helpers\MovingAverage.cs" />
