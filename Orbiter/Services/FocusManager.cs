@@ -22,7 +22,7 @@ namespace Orbiter.Services
     {
         void SetFocus(IFocusElement element);
 
-        void Tap();
+        bool HandleTap();
         void Manipulate(Vector3 relGlobal, Vector3 relCamera, Vector3 relCameraDiff);
     }
 
@@ -34,12 +34,16 @@ namespace Orbiter.Services
         {
             this.CurrentFocus?.LostFocus();
             this.CurrentFocus = element;
-            this.CurrentFocus.GotFocus();
+            this.CurrentFocus?.GotFocus();
         }
 
-        public void Tap()
+        public bool HandleTap()
         {
-            this.CurrentFocus?.Tap();
+            if (this.CurrentFocus == null)
+                return false;
+
+            this.CurrentFocus.Tap();
+            return true;
         }
 
         public void Manipulate(Vector3 relGlobal, Vector3 relCamera, Vector3 relCameraDiff)

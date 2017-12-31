@@ -11,6 +11,7 @@ using LightInject;
 using Orbiter.Services;
 using Orbiter.Components;
 using System.Diagnostics;
+using Urho.Physics;
 
 namespace Orbiter
 {
@@ -56,6 +57,9 @@ namespace Orbiter
             DirectionalLight.Node.SetDirection(new Vector3(-1, 0, 0.5f));
 
             this.SetupMenu();
+
+            var physics = this.Scene.GetOrCreateComponent<PhysicsWorld>();
+            physics.SetGravity(new Vector3(0, -1f, 0));
 
             var planetsNode = Scene.CreateChild();
 
@@ -106,14 +110,25 @@ namespace Orbiter
 
         public override void OnGestureTapped()
         {
+            // Ignore taps when manipulating.
             if (this.isManipulating)
                 return;
 
-            this.focusManager.Tap();
+            // Check if the tap selected something.
+            //var ray = Raycast();
+            //if (ray.HasValue)
+            //{
 
-            var ray = Raycast();
-            if (!ray.HasValue)
+            //}
+
+            // Is some object focused that may handle the tap?
+            if (this.focusManager.HandleTap())
                 return;
+
+            // Do default action.
+            var ball = this.Scene.CreateChild();
+            var rocket = ball.CreateComponent<Rocket>();
+            rocket.Fire(LeftCamera.Node.WorldPosition, LeftCamera.Node.WorldRotation, 3.0f);
         }
 
         private bool isManipulating = false;

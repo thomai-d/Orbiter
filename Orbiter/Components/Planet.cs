@@ -51,11 +51,6 @@ namespace Orbiter.Components
                     break;
             }
         }
-
-        protected override void OnUpdate(float timeStep)
-        {
-            base.OnUpdate(timeStep);
-        }
     }
 
     public enum PlanetType

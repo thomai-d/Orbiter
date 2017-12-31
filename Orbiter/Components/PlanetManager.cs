@@ -66,6 +66,7 @@ namespace Orbiter.Components
         {
             this.tempPlanetNode = null;
             this.soundSource.Play(Application.ResourceCache.GetSound("Sound\\Create.wav"));
+            this.focusManager.SetFocus(null);
         }
 
         protected override void OnUpdate(float timeStep)
