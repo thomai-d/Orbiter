@@ -12,6 +12,7 @@ using Orbiter.Services;
 using Orbiter.Components;
 using System.Diagnostics;
 using Urho.Physics;
+using Urho.Audio;
 
 namespace Orbiter
 {
@@ -58,7 +59,7 @@ namespace Orbiter
             this.SetupMenu();
 
             var physics = this.Scene.GetOrCreateComponent<PhysicsWorld>();
-            physics.SetGravity(new Vector3(0, -1f, 0));
+            physics.SetGravity(new Vector3(0, 0, 0));
 
             this.grid = this.Scene.CreateComponent<Grid>();
 
@@ -66,10 +67,17 @@ namespace Orbiter
             this.Scene.AddComponent(this.planetFactory);
 
             this.rocketFactory = this.Scene.CreateComponent<RocketFactory>();
+
+            var listener = this.LeftCamera.Node.CreateComponent<SoundListener>();
+            Audio.Listener = listener;
+
+            var sound = this.Scene.CreateComponent<SoundSource>();
+            sound.Play(this.ResourceCache.GetSound("Sound\\Startup.wav"));
         }
 
         private void SetupMenu()
         {
+            // TODO Refactor menu
             var menuNode = Scene.CreateChild();
             this.mainMenu = menuNode.CreateComponent<OnScreenMenu>();
             this.mainMenu.Initialize(this);
@@ -80,7 +88,7 @@ namespace Orbiter
                 new MenuItem("Remove planets", () => this.planetFactory.RemovePlanets(), "remove planets"),
                 new MenuItem("Remove rockets", () => this.rocketFactory.RemoveRockets(), "remove rockets"),
                 new MenuItem("Toggle grid", () => { this.grid.GridVisibility = !this.grid.GridVisibility; }, "toggle grid"),
-                new MenuItem("Exit", () => { this.Say("Exit"); }, "Exit")
+                new MenuItem("Exit", () => { }, "Exit")
             });
         }
 

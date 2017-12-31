@@ -68,7 +68,7 @@ namespace Orbiter.Components
                     newGravity += displace * (float)force;
                 }
 
-                // v = f / m
+                // TODO v = f / m
 
                 rigidBody.GravityOverride = newGravity;
             }
