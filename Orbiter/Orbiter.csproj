@@ -53,8 +53,8 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\FocusManager.cs" />
-    <Compile Include="Services\GridService.cs" />
-    <Compile Include="Services\MenuItem.cs" />
+    <Compile Include="Components\Grid.cs" />
+    <Compile Include="Components\MenuItem.cs" />
     <Compile Include="Components\OnScreenMenu.cs" />
   </ItemGroup>
   <ItemGroup>

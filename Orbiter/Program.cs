@@ -60,13 +60,12 @@ namespace Orbiter
             var physics = this.Scene.GetOrCreateComponent<PhysicsWorld>();
             physics.SetGravity(new Vector3(0, -1f, 0));
 
-            this.rocketFactory = this.Scene.CreateComponent<RocketFactory>();
-
             this.grid = this.Scene.CreateComponent<Grid>();
 
-            // TODO think about DI...
             this.planetFactory = this.container.GetInstance<PlanetFactory>();
             this.Scene.AddComponent(this.planetFactory);
+
+            this.rocketFactory = this.Scene.CreateComponent<RocketFactory>();
         }
 
         private void SetupMenu()
@@ -78,6 +77,8 @@ namespace Orbiter
             this.mainMenu.MainMenu = new MenuItem("Menu", string.Empty, new MenuItem[]
             {
                 new MenuItem("Add planet", () => this.planetFactory.AddNewPlanet(), "add planet"),
+                new MenuItem("Remove planets", () => this.planetFactory.RemovePlanets(), "remove planets"),
+                new MenuItem("Remove rockets", () => this.rocketFactory.RemoveRockets(), "remove rockets"),
                 new MenuItem("Toggle grid", () => { this.grid.GridVisibility = !this.grid.GridVisibility; }, "toggle grid"),
                 new MenuItem("Exit", () => { this.Say("Exit"); }, "Exit")
             });

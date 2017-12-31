@@ -23,6 +23,7 @@ namespace Orbiter.Components
     {
         private SoundSource soundSource;
         private Node cameraNode;
+        private PlanetFactory planetFactory;
         private Node rocketsNode;
 
         public RocketFactory()
@@ -37,8 +38,11 @@ namespace Orbiter.Components
             if (this.Node != this.Scene)
                 throw new InvalidOperationException("RocketFactory should be attached to the scene");
 
-            this.cameraNode = this.Scene.GetChild("MainCamera", true) 
+            this.cameraNode = this.Scene.GetChild("MainCamera", false) 
                 ?? throw new InvalidOperationException("'MainCamera' not found");
+
+            this.planetFactory = this.Scene.GetComponent<PlanetFactory>()
+                ?? throw new InvalidOperationException("'PlanetFactory' not found");
 
             this.rocketsNode = this.Node.CreateChild("Rockets");
 
@@ -53,6 +57,20 @@ namespace Orbiter.Components
             foreach (var rocketNode in this.rocketsNode.Children)
             {
                 var rigidBody = rocketNode.GetComponent<RigidBody>();
+
+                var newGravity = Vector3.Zero;
+                foreach (var planetNode in this.planetFactory.PlanetNodes)
+                {
+                    var distance = Vector3.Distance(rocketNode.WorldPosition, planetNode.WorldPosition);
+                    var force = (0.1f) / Math.Pow(distance, 2);
+                    var displace = (planetNode.WorldPosition - rocketNode.WorldPosition);
+                    displace.Normalize();
+                    newGravity += displace * (float)force;
+                }
+
+                // v = f / m
+
+                rigidBody.GravityOverride = newGravity;
             }
         }
 
@@ -68,7 +86,12 @@ namespace Orbiter.Components
             var rigidBody = rocketNode.CreateComponent<RigidBody>();
             rigidBody.Mass = 1.0f;
             rigidBody.LinearRestThreshold = 0.001f;
-            rigidBody.SetLinearVelocity(this.cameraNode.Rotation * new Vector3(0, 0, 3.0f));
+            rigidBody.SetLinearVelocity(this.cameraNode.Rotation * new Vector3(0, 0, 0.3f));
+        }
+
+        public void RemoveRockets()
+        {
+            this.rocketsNode.RemoveAllChildren();
         }
     }
 }

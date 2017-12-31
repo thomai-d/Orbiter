@@ -23,7 +23,8 @@ namespace Orbiter.Components
             
             // TODO Mesh
             var temp = this.Node.CreateComponent<Sphere>();
-            temp.SetMaterial(Material.FromColor(Color.Yellow));
+            //temp.SetMaterial(Material.FromColor(Color.Yellow));
+            temp.SetMaterial(Material.FromImage("Textures\\Moon.jpg"));
             this.Node.SetScale(0.1f);
         }
 

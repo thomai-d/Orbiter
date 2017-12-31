@@ -15,9 +15,9 @@ namespace Orbiter.Components
     /// +--Scene
     ///    +---PlanetFactory (Component)
     ///    +---"Planets" (Node)
-    ///        +---Node
+    ///        +---"Planet" (Node)
     ///            +---Planet (Component)
-    ///        +---Node
+    ///        +---"Planet" (Node)
     ///            +---Planet (Component)
     /// </summary>
     public class PlanetFactory : Component, IFocusElement
@@ -35,7 +35,7 @@ namespace Orbiter.Components
         private MovingAverage averageLocation = new MovingAverage(25);
 
         private IFocusManager focusManager;
-        private Node planetsNode;
+        private Node planetsRoot;
 
         public PlanetFactory(IFocusManager focusManager)
         {
@@ -56,12 +56,12 @@ namespace Orbiter.Components
             this.soundSource = this.Node.CreateComponent<SoundSource>();
             this.soundSource.Gain = 1.0f;
 
-            this.planetsNode = this.Node.CreateChild("Planets");
+            this.planetsRoot = this.Node.CreateChild("Planets");
         }
 
         public void AddNewPlanet()
         {
-            this.tempPlanetNode = this.planetsNode.CreateChild();
+            this.tempPlanetNode = this.planetsRoot.CreateChild("Planet");
             var planet = this.tempPlanetNode.CreateComponent<Planet>();
 
             planet.Initialize(PlanetType.Earth);
@@ -80,6 +80,11 @@ namespace Orbiter.Components
             this.focusManager.SetFocus(null);
         }
 
+        public void RemovePlanets()
+        {
+            this.planetsRoot.RemoveAllChildren();
+        }
+
         protected override void OnUpdate(float timeStep)
         {
             base.OnUpdate(timeStep);
@@ -94,6 +99,8 @@ namespace Orbiter.Components
             this.tempPlanetNode.SetWorldPosition(averageLocation.Average);
             this.tempPlanetNode.SetWorldRotation(rotation);
         }
+
+        public IEnumerable<Node> PlanetNodes => this.planetsRoot.Children;
 
         public void GotFocus()
         {
