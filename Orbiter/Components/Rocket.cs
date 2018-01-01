@@ -13,6 +13,8 @@ namespace Orbiter.Components
 {
     public class Rocket : Component
     {
+        private Node cameraNode;
+
         public Rocket()
         {
             this.ReceiveSceneUpdates = true;
@@ -21,12 +23,12 @@ namespace Orbiter.Components
         public override void OnAttachedToNode(Node node)
         {
             base.OnAttachedToNode(node);
-            
-            // TODO Mesh
-            var temp = this.Node.CreateComponent<Sphere>();
-            //temp.SetMaterial(Material.FromColor(Color.Yellow));
-            temp.SetMaterial(Material.FromImage("Textures\\Moon.jpg"));
-            this.Node.SetScale(0.1f);
+
+            var planeModel = this.Node.CreateComponent<StaticModel>();
+            // TODO Naming, Sound => Sounds, Material
+            planeModel.Model = this.Application.ResourceCache.GetModel("Models\\Cube.mdl");
+            this.Node.Rotate(new Quaternion(0, 180, 0), TransformSpace.World);
+            this.Node.SetScale(0.01f);
 
             var soundComponent = this.Node.CreateComponent<SoundSource3D>();
             var sound = this.Application.ResourceCache.GetSound("Sound\\Rocket.wav");

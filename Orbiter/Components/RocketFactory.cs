@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,6 +39,7 @@ namespace Orbiter.Components
             if (this.Node != this.Scene)
                 throw new InvalidOperationException("RocketFactory should be attached to the scene");
 
+            // TODO Names in static class
             this.cameraNode = this.Scene.GetChild("MainCamera", false) 
                 ?? throw new InvalidOperationException("'MainCamera' not found");
 
@@ -56,6 +58,7 @@ namespace Orbiter.Components
 
             foreach (var rocketNode in this.rocketsNode.Children)
             {
+                // TODO move stuff to plane
                 var rigidBody = rocketNode.GetComponent<RigidBody>();
 
                 var newGravity = Vector3.Zero;
@@ -66,7 +69,16 @@ namespace Orbiter.Components
                     var displace = (planetNode.WorldPosition - rocketNode.WorldPosition);
                     displace.Normalize();
                     newGravity += displace * (float)force;
+
                 }
+
+                // TODO Understand quaternion vector
+                rocketNode.LookAt(rocketNode.WorldPosition + rigidBody.LinearVelocity, Vector3.Up, TransformSpace.World);
+
+                // TODO DebugHud?
+
+                // TODO Doppler effect 
+                //rocketNode.GetComponent<SoundSource3D>().Frequency = 44100f * rigidBody.LinearVelocity.LengthFast;
 
                 // TODO v = f / m
 
