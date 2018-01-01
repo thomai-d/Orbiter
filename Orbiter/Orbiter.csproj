@@ -48,10 +48,12 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Components\JoystickServer.cs" />
     <Compile Include="Components\Planet.cs" />
     <Compile Include="Components\PlanetFactory.cs" />
     <Compile Include="Components\Rocket.cs" />
     <Compile Include="Components\RocketFactory.cs" />
+    <Compile Include="Helpers\ByteHelper.cs" />
     <Compile Include="Helpers\MovingAverage.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

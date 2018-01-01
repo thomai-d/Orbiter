@@ -38,6 +38,7 @@ namespace Orbiter.Components
 
         public Task ShowMenuAsync(MenuItem menu)
         {
+            // TODO include commands available right now.
             const float vlineoffset = 0.03f;
 
             this.averageLocation.Reset();

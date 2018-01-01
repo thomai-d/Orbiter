@@ -30,6 +30,7 @@ namespace Orbiter
         private OnScreenMenu mainMenu;
         private FocusManager focusManager;
         private PlanetFactory planetFactory;
+        private JoystickServer joystickServer;
 
         public OrbiterApplication(ApplicationOptions opts) : base(opts)
         {
@@ -52,13 +53,15 @@ namespace Orbiter
             var physics = this.Scene.GetOrCreateComponent<PhysicsWorld>();
             physics.SetGravity(new Vector3(0, 0, 0));
 
-            this.grid = this.Scene.CreateComponent<Grid>();
+            this.joystickServer = this.Scene.CreateComponent<JoystickServer>();
 
             this.focusManager = this.Scene.CreateComponent<FocusManager>();
 
             this.planetFactory = this.Scene.CreateComponent<PlanetFactory>();
 
             this.rocketFactory = this.Scene.CreateComponent<RocketFactory>();
+
+            this.grid = this.Scene.CreateComponent<Grid>();
 
             var listener = this.LeftCamera.Node.CreateComponent<SoundListener>();
             Audio.Listener = listener;
@@ -92,6 +95,14 @@ namespace Orbiter
         public void Say(string text)
         {
             this.TextToSpeech(text);
+        }
+
+        protected override void OnUpdate(float timeStep)
+        {
+            base.OnUpdate(timeStep);
+
+            this.FocusWorldPoint = Raycast()?.Node?.WorldPosition 
+                ?? LeftCamera.Node.WorldPosition + LeftCamera.Node.WorldRotation * Vector3.Forward * 2;
         }
 
         private RayQueryResult? Raycast()

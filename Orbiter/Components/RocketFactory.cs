@@ -27,11 +27,6 @@ namespace Orbiter.Components
         private PlanetFactory planetFactory;
         private Node rocketsNode;
 
-        public RocketFactory()
-        {
-            this.ReceiveSceneUpdates = true;
-        }
-
         public override void OnAttachedToNode(Node node)
         {
             base.OnAttachedToNode(node);
@@ -52,55 +47,15 @@ namespace Orbiter.Components
             this.soundSource.Gain = 1.0f;
         }
 
-        protected override void OnUpdate(float timeStep)
-        {
-            base.OnUpdate(timeStep);
-
-            foreach (var rocketNode in this.rocketsNode.Children)
-            {
-                // TODO move stuff to plane
-                var rigidBody = rocketNode.GetComponent<RigidBody>();
-
-                var newGravity = Vector3.Zero;
-                foreach (var planetNode in this.planetFactory.PlanetNodes)
-                {
-                    var distance = Vector3.Distance(rocketNode.WorldPosition, planetNode.WorldPosition);
-                    var force = (0.1f) / Math.Pow(distance, 2);
-                    var displace = (planetNode.WorldPosition - rocketNode.WorldPosition);
-                    displace.Normalize();
-                    newGravity += displace * (float)force;
-
-                }
-
-                // TODO Understand quaternion vector
-                rocketNode.LookAt(rocketNode.WorldPosition + rigidBody.LinearVelocity, Vector3.Up, TransformSpace.World);
-
-                // Doppler effect
-                var o = rocketNode.WorldPosition;
-                var c = cameraNode.WorldPosition;
-                var v = rigidBody.LinearVelocity;
-                var delta =  (o - c).LengthFast - (o - c + v).LengthFast;
-                rocketNode.GetComponent<SoundSource3D>().Frequency = 44100f * (1f + delta);
-
-                // TODO v = f / m
-
-                rigidBody.GravityOverride = newGravity;
-            }
-        }
-
         public void Fire()
         {
             this.soundSource.Play(Application.ResourceCache.GetSound("Sound\\Arrow1.wav"));
 
             var rocketNode = this.rocketsNode.CreateChild();
-            rocketNode.SetWorldPosition(this.cameraNode.WorldPosition + this.cameraNode.Rotation * new Vector3(0, 0, 0.5f));
-            rocketNode.SetWorldRotation(this.cameraNode.Rotation);
-
             var rocket = rocketNode.CreateComponent<Rocket>();
-            var rigidBody = rocketNode.CreateComponent<RigidBody>();
-            rigidBody.Mass = 1.0f;
-            rigidBody.LinearRestThreshold = 0.001f;
-            rigidBody.SetLinearVelocity(this.cameraNode.Rotation * new Vector3(0, 0, 0.5f));
+
+            rocketNode.SetWorldPosition(this.cameraNode.WorldPosition + this.cameraNode.WorldRotation * new Vector3(0, 0, 0.5f));
+            rocketNode.SetWorldRotation(this.cameraNode.WorldRotation);
         }
 
         public void RemoveRockets()
