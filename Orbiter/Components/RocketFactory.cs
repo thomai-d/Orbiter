@@ -75,10 +75,12 @@ namespace Orbiter.Components
                 // TODO Understand quaternion vector
                 rocketNode.LookAt(rocketNode.WorldPosition + rigidBody.LinearVelocity, Vector3.Up, TransformSpace.World);
 
-                // TODO DebugHud?
-
-                // TODO Doppler effect 
-                //rocketNode.GetComponent<SoundSource3D>().Frequency = 44100f * rigidBody.LinearVelocity.LengthFast;
+                // Doppler effect
+                var o = rocketNode.WorldPosition;
+                var c = cameraNode.WorldPosition;
+                var v = rigidBody.LinearVelocity;
+                var delta =  (o - c).LengthFast - (o - c + v).LengthFast;
+                rocketNode.GetComponent<SoundSource3D>().Frequency = 44100f * (1f + delta);
 
                 // TODO v = f / m
 
@@ -98,7 +100,7 @@ namespace Orbiter.Components
             var rigidBody = rocketNode.CreateComponent<RigidBody>();
             rigidBody.Mass = 1.0f;
             rigidBody.LinearRestThreshold = 0.001f;
-            rigidBody.SetLinearVelocity(this.cameraNode.Rotation * new Vector3(0, 0, 0.3f));
+            rigidBody.SetLinearVelocity(this.cameraNode.Rotation * new Vector3(0, 0, 0.5f));
         }
 
         public void RemoveRockets()
