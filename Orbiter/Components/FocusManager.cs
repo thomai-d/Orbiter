@@ -18,17 +18,16 @@ namespace Orbiter.Services
         void Manipulate(Vector3 relGlobal, Vector3 relCamera, Vector3 relCameraDiff);
     }
 
-    public interface IFocusManager
-    {
-        void SetFocus(IFocusElement element);
-
-        bool HandleTap();
-        void Manipulate(Vector3 relGlobal, Vector3 relCamera, Vector3 relCameraDiff);
-    }
-
-    public class FocusManager : IFocusManager
+    public class FocusManager : Component
     {
         public IFocusElement CurrentFocus { get; private set; }
+
+        public override void OnAttachedToNode(Node node)
+        {
+            base.OnAttachedToNode(node);
+
+            if (node != this.Scene) throw new InvalidOperationException("FocusManager should be attached to scene");
+        }
 
         public void SetFocus(IFocusElement element)
         {

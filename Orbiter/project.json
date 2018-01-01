@@ -1,6 +1,5 @@
 ﻿{
   "dependencies": {
-    "LightInject": "5.1.1",
     "Microsoft.NETCore.UniversalWindowsPlatform": "5.2.*",
     "UrhoSharp.SharpReality": "1.4.18"
   },

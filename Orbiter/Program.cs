@@ -7,7 +7,6 @@ using Urho.SharpReality;
 using Urho.Shapes;
 using Urho.Resources;
 using Urho.Gui;
-using LightInject;
 using Orbiter.Services;
 using Orbiter.Components;
 using System.Diagnostics;
@@ -28,20 +27,12 @@ namespace Orbiter
 
     public class OrbiterApplication : StereoApplication
     {
-        private readonly IFocusManager focusManager;
-        private readonly ServiceContainer container;
-
         private OnScreenMenu mainMenu;
-
+        private FocusManager focusManager;
         private PlanetFactory planetFactory;
 
         public OrbiterApplication(ApplicationOptions opts) : base(opts)
         {
-            // TODO Remove DI
-            this.container = new ServiceContainer();
-            this.container.Register<IFocusManager, FocusManager>(new PerContainerLifetime());
-            this.container.Register<PlanetFactory>(new PerContainerLifetime());
-            this.focusManager = this.container.GetInstance<IFocusManager>();
         }
 
         protected override void Start()
@@ -63,8 +54,9 @@ namespace Orbiter
 
             this.grid = this.Scene.CreateComponent<Grid>();
 
-            this.planetFactory = this.container.GetInstance<PlanetFactory>();
-            this.Scene.AddComponent(this.planetFactory);
+            this.focusManager = this.Scene.CreateComponent<FocusManager>();
+
+            this.planetFactory = this.Scene.CreateComponent<PlanetFactory>();
 
             this.rocketFactory = this.Scene.CreateComponent<RocketFactory>();
 

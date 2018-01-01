@@ -33,14 +33,13 @@ namespace Orbiter.Components
         private Node tempPlanetNode;
         private SoundSource soundSource;
         private MovingAverage averageLocation = new MovingAverage(25);
+        private FocusManager focusManager;
 
-        private IFocusManager focusManager;
         private Node planetsRoot;
 
-        public PlanetFactory(IFocusManager focusManager)
+        public PlanetFactory()
         {
             this.ReceiveSceneUpdates = true;
-            this.focusManager = focusManager;
         }
 
         public override void OnAttachedToNode(Node node)
@@ -52,6 +51,8 @@ namespace Orbiter.Components
 
             this.cameraNode = this.Scene.GetChild("MainCamera", true) 
                 ?? throw new InvalidOperationException("'MainCamera' not found");
+
+            this.focusManager = this.Scene.GetComponent<FocusManager>();
 
             this.soundSource = this.Node.CreateComponent<SoundSource>();
             this.soundSource.Gain = 1.0f;
