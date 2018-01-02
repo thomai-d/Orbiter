@@ -25,11 +25,12 @@ namespace Orbiter
         }
     }
 
-    public class OrbiterApplication : StereoApplication
+    public class OrbiterApplication : StereoApplication, IFocusElement
     {
-        private OnScreenMenu mainMenu;
+        private OnScreenMenu onScreenMenu;
         private FocusManager focusManager;
         private PlanetFactory planetFactory;
+        private VoiceRecognition voiceRecognition;
         private JoystickServer joystickServer;
 
         public OrbiterApplication(ApplicationOptions opts) : base(opts)
@@ -48,14 +49,19 @@ namespace Orbiter
             DirectionalLight.Brightness = 1f;
             DirectionalLight.Node.SetDirection(new Vector3(-1, 0, 0.5f));
 
-            this.SetupMenu();
-
             var physics = this.Scene.GetOrCreateComponent<PhysicsWorld>();
             physics.SetGravity(new Vector3(0, 0, 0));
+
+            this.voiceRecognition = this.Scene.CreateComponent<VoiceRecognition>();
+            this.voiceRecognition.SetRegisterCallback(this.RegisterCortanaCommands);
+
+            this.onScreenMenu = this.Scene.CreateComponent<OnScreenMenu>();
 
             this.joystickServer = this.Scene.CreateComponent<JoystickServer>();
 
             this.focusManager = this.Scene.CreateComponent<FocusManager>();
+            this.focusManager.DefaultFocus = this;
+            this.focusManager.SetFocus(this);
 
             this.planetFactory = this.Scene.CreateComponent<PlanetFactory>();
 
@@ -68,28 +74,6 @@ namespace Orbiter
 
             var sound = this.Scene.CreateComponent<SoundSource>();
             sound.Play(this.ResourceCache.GetSound("Sound\\Startup.wav"));
-        }
-
-        private void SetupMenu()
-        {
-            // TODO Refactor menu
-            var menuNode = Scene.CreateChild();
-            this.mainMenu = menuNode.CreateComponent<OnScreenMenu>();
-            this.mainMenu.Initialize(this);
-
-            this.mainMenu.MainMenu = new MenuItem("Menu", string.Empty, new MenuItem[]
-            {
-                new MenuItem("Add planet", () => this.planetFactory.AddNewPlanet(), "add planet"),
-                new MenuItem("Remove planets", () => this.planetFactory.RemovePlanets(), "remove planets"),
-                new MenuItem("Remove rockets", () => this.rocketFactory.RemoveRockets(), "remove rockets"),
-                new MenuItem("Toggle grid", () => { this.grid.GridVisibility = !this.grid.GridVisibility; }, "toggle grid"),
-                new MenuItem("Exit", () => { }, "Exit")
-            });
-        }
-
-        public new void RegisterCortanaCommands(Dictionary<string, Action> actions)
-        {
-            base.RegisterCortanaCommands(actions);
         }
 
         public void Say(string text)
@@ -127,9 +111,6 @@ namespace Orbiter
             // Is some object focused that may handle the tap?
             if (this.focusManager.HandleTap())
                 return;
-
-            // Do default action.
-            this.rocketFactory.Fire();
         }
 
         private bool isManipulating = false;
@@ -145,6 +126,21 @@ namespace Orbiter
         private Vector3 cameraStartPos = Vector3.Zero;
         private RocketFactory rocketFactory;
         private Grid grid;
+
+        public MenuItem[] ContextMenu
+        {
+            get
+            {
+                return new[] 
+                {
+                    new MenuItem("Add planet", () => this.planetFactory.AddNewPlanet(), "add planet"),
+                    new MenuItem("Remove planets", () => this.planetFactory.RemovePlanets(), "remove planets"),
+                    new MenuItem("Start rocket", () => this.rocketFactory.Fire(), "start rocket"),
+                    new MenuItem("Remove rockets", () => this.rocketFactory.RemoveRockets(), "remove rockets"),
+                    new MenuItem("Toggle grid", () => { this.grid.GridVisibility = !this.grid.GridVisibility; }, "toggle grid"),
+                };
+            }
+        }
 
         public override void OnGestureManipulationUpdated(Vector3 relGlobalPos)
         {
@@ -169,6 +165,23 @@ namespace Orbiter
         {
             base.OnGestureManipulationCanceled();
             isManipulating = false;
+        }
+
+        public void GotFocus()
+        {
+        }
+
+        public void LostFocus()
+        {
+        }
+
+        public void Tap()
+        {
+            this.rocketFactory.Fire();
+        }
+
+        public void Manipulate(Vector3 relGlobal, Vector3 relCamera, Vector3 relCameraDiff)
+        { 
         }
     }
 }

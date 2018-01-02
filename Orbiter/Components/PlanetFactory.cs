@@ -103,6 +103,17 @@ namespace Orbiter.Components
 
         public IEnumerable<Node> PlanetNodes => this.planetsRoot.Children;
 
+        public MenuItem[] ContextMenu
+        {
+            get
+            {
+                return new[]
+                {
+                    new MenuItem("Place", this.PlacePlanet, "Place")
+                };
+            }
+        }
+
         public void GotFocus()
         {
         }

@@ -11,64 +11,87 @@ using Urho.Gui;
 
 namespace Orbiter.Components
 {
+    // TODO Document, also requirements
     public class OnScreenMenu : Component
     {
         private MovingAverage averageLocation = new MovingAverage(30);
-        private OrbiterApplication app;
         private Node menuRoot;
-        private MenuItem menuItem;
+        private MenuItem currentOnScreenMenu;
         private SoundSource soundSource;
+        private VoiceRecognition voiceRecognition;
+        private Node cameraNode;
+        private Camera camera;
+        private Octree octree;
+        private MenuItem[] contextMenu;
 
         private TaskCompletionSource<bool> showMenuTcs { get; set; }
-
-        public MenuItem MainMenu { get; set; }
 
         public OnScreenMenu()
         {
             this.ReceiveSceneUpdates = true;
         }
 
-        public void Initialize(OrbiterApplication app)
+        public override void OnAttachedToNode(Node node)
         {
-            this.app = app;
-            this.SetupDefaultVoiceCommand();
+            base.OnAttachedToNode(node);
+
+            if (node != this.Scene) throw new InvalidOperationException("OnScreenMenu should be attached to scene");
 
             this.soundSource = this.Node.CreateComponent<SoundSource>();
+
+            this.voiceRecognition = this.Scene.GetComponent<VoiceRecognition>()
+                ?? throw new InvalidOperationException("VoiceRecognition not found");
+
+            this.cameraNode = this.Scene.GetChild("MainCamera", true) 
+                ?? throw new InvalidOperationException("'MainCamera' not found");
+
+            this.camera = this.cameraNode.GetComponent<Camera>()
+                ?? throw new InvalidOperationException("Camera not found");
+
+            this.octree = this.Scene.GetComponent<Octree>()
+                ?? throw new InvalidOperationException("Octree not found");
         }
 
-        public Task ShowMenuAsync(MenuItem menu)
+        public Task ShowMenu()
         {
-            // TODO include commands available right now.
+            var menu = new MenuItem("MENU", string.Empty, this.contextMenu);
+            return ShowMenuAsync(menu);
+        }
+
+        private async Task ShowMenuAsync(MenuItem menu)
+        {
             const float vlineoffset = 0.03f;
 
-            this.averageLocation.Reset();
+            this.currentOnScreenMenu = menu;
+            this.menuRoot = this.Node.CreateChild();
 
-            this.menuItem = menu;
-            this.menuRoot = this.app.Scene.CreateChild();
-            var top = menu.SubItems.Length / 2 * vlineoffset;
-
-            var commands = new Dictionary<string, Action>();
+            var top = menu.SubItems.Length / 2.0f * vlineoffset + vlineoffset/2;
 
             var maxWidth = 0f;
-            int n = 0;
-            maxWidth = Math.Max(maxWidth, this.AddItem(top, this.menuItem, isHeadline: true));
+            var commands = new Dictionary<string, Action>();
+            maxWidth = Math.Max(maxWidth, this.AddItem(top, this.currentOnScreenMenu, isHeadline: true));
 
+            int n = 0;
             foreach (var item in menu.SubItems)
             {
                 maxWidth = Math.Max(maxWidth, this.AddItem(top - ++n * vlineoffset, item));
 
-                if (!string.IsNullOrEmpty(item.VoiceCommand))
-                    commands.Add(item.VoiceCommand, () => this.OnItemSelected(item));
+                if (!string.IsNullOrEmpty(item.VoiceCommand)) commands.Add(item.VoiceCommand, () => this.OnItemSelected(item));
             }
+
+            var exitItem = new MenuItem("Exit", () => { });
+            this.AddItem(top - ++n * vlineoffset, exitItem);
+            commands.Add("Exit", () => this.OnItemSelected(exitItem));
+
+            await this.voiceRecognition.RegisterCommands(commands);
 
             var backNode = this.menuRoot.CreateChild();
             var back = backNode.CreateComponent<StaticModel>();
+            back.ViewMask = 0x80000000; //hide from raycasts
             back.Model = CoreAssets.Models.Box;
             back.SetMaterial(Material.FromColor(new Color(0.2f, 0.2f, 0.2f, 0.8f)));
-            backNode.Translate(new Vector3(0, -vlineoffset/2, 0.01f));
-            backNode.ScaleNode(new Vector3(maxWidth + 0.2f, vlineoffset * (menu.SubItems.Length + 2), 0.01f));
-
-            this.app.RegisterCortanaCommands(commands);
+            backNode.Translate(new Vector3(0, 0, 0.01f));
+            backNode.ScaleNode(new Vector3(maxWidth + 0.2f, vlineoffset * (menu.SubItems.Length + 3), 0.01f));
 
             // TODO Sound files in static class
             if (this.showMenuTcs == null)
@@ -77,10 +100,24 @@ namespace Orbiter.Components
                 this.showMenuTcs = new TaskCompletionSource<bool>(null, TaskCreationOptions.RunContinuationsAsynchronously);
             }
 
+            this.averageLocation.Reset();
             this.menuRoot.SetScale(0.0f);
             this.menuRoot.RunActions(new EaseElasticOut(new ScaleTo(0.5f, 1.0f)));
 
-            return this.showMenuTcs.Task;
+            await this.showMenuTcs.Task;
+        }
+
+        public async void SetContextMenu(MenuItem[] items)
+        {
+            this.contextMenu = items;
+
+            var commands = items
+                .Where(c => !string.IsNullOrEmpty(c.VoiceCommand))
+                .ToDictionary(i => i.VoiceCommand, i => i.Execute);
+
+            commands.Add("Hey", () => this.ShowMenu());
+
+            await this.voiceRecognition.RegisterCommands(commands);
         }
 
         protected override void OnUpdate(float timeStep)
@@ -88,32 +125,41 @@ namespace Orbiter.Components
             if (this.menuRoot == null)
                 return;
 
-            var headPosition = this.app.LeftCamera.Node.WorldPosition;
-            var rotation = this.app.LeftCamera.Node.Rotation;
+            var headPosition = this.cameraNode.WorldPosition;
+            var rotation = this.cameraNode.Rotation;
 
-            averageLocation.AddSample(headPosition + (rotation * new Vector3(0, 0, 1)));
+            // Scale / reposition if something is in front of camera.
+            var distance = 1.0f;
+            var ray = this.camera.GetScreenRay(0.5f, 0.5f);
+            var result = this.octree.RaycastSingle(ray, RayQueryLevel.Triangle, 1.0f, DrawableFlags.Geometry, 0x70000000);
+            if (result.HasValue && result.Value.Distance < distance)
+                distance = result.Value.Distance;
+            this.menuRoot.SetScale(distance);
+
+            // Set Position/Rotation
+            averageLocation.AddSample(headPosition + (rotation * new Vector3(0, 0, distance)));
             this.menuRoot.SetWorldPosition(averageLocation.Average);
             this.menuRoot.SetWorldRotation(rotation);
         }
 
-        private void OnItemSelected(MenuItem item)
+        private async void OnItemSelected(MenuItem item)
         {
             this.soundSource.Play(Application.ResourceCache.GetSound("Sound\\Select.wav"));
 
             item.Execute();
 
-            this.app.Scene.RemoveChild(this.menuRoot);
+            this.Node.RemoveChild(this.menuRoot);
             this.menuRoot = null;
 
-            if (!item.HasSubItems)
+            if (item.HasSubItems)
             {
-                this.SetupDefaultVoiceCommand();
-                this.showMenuTcs.SetResult(true);
-                this.showMenuTcs = null;
+                await this.ShowMenuAsync(item);
                 return;
             }
 
-            this.ShowMenuAsync(item);
+            this.SetContextMenu(this.contextMenu);
+            this.showMenuTcs.SetResult(true);
+            this.showMenuTcs = null;
         }
 
         private float AddItem(float offset, MenuItem item, bool isHeadline = false)
@@ -133,16 +179,6 @@ namespace Orbiter.Components
             textNode.SetScale(0.1f);
 
             return text3D.BoundingBox.Size.X * 0.1f;
-        }
-
-        private void SetupDefaultVoiceCommand()
-        {
-            var cmds = new Dictionary<string, Action>
-            {
-                { "Hey", () => { if (this.MainMenu != null) this.ShowMenuAsync(this.MainMenu); } }
-            };
-
-            this.app.RegisterCortanaCommands(cmds);
         }
     }
 }

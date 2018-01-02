@@ -19,8 +19,10 @@ namespace Orbiter.Helpers
 
         public void AddSample(Vector3 f)
         {
-            this.queue.Enqueue(f);
-            if (this.queue.Count > this.samples)
+            while (this.queue.Count < this.samples)
+                this.queue.Enqueue(f);
+
+            if (this.queue.Count >= this.samples)
                 this.queue.Dequeue();
         }
 
