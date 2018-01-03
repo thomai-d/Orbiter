@@ -1,12 +1,7 @@
 ﻿using Orbiter.Helpers;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using Urho;
-using Windows.Networking;
 using Windows.Networking.Sockets;
 
 namespace Orbiter.Components
@@ -20,21 +15,26 @@ namespace Orbiter.Components
         public byte Buttons0;
         public byte Buttons1;
 
-        public bool IsButtonDown(Button b)
+        public bool IsButtonDown(Button0 b)
         {
-            // TODO Other buttons && Joystick host on here.
-            if (b == Button.A) return (this.Buttons0 & (int)b) > 0;
-            if (b == Button.B) return (this.Buttons0 & (int)b) > 0;
-            if (b == Button.X) return (this.Buttons0 & (int)b) > 0;
-            if (b == Button.Y) return (this.Buttons0 & (int)b) > 0;
-            if (b == Button.L) return (this.Buttons0 & (int)b) > 0;
-            if (b == Button.R) return (this.Buttons0 & (int)b) > 0;
+            if (b == Button0.A) return (this.Buttons0 & (int)b) > 0;
+            if (b == Button0.B) return (this.Buttons0 & (int)b) > 0;
+            if (b == Button0.X) return (this.Buttons0 & (int)b) > 0;
+            if (b == Button0.Y) return (this.Buttons0 & (int)b) > 0;
+            if (b == Button0.L) return (this.Buttons0 & (int)b) > 0;
+            if (b == Button0.R) return (this.Buttons0 & (int)b) > 0;
+            return false;
+        }
 
+        public bool IsButtonDown(Button1 b)
+        {
+            if (b == Button1.Select) return (this.Buttons1 & (int)b) > 0;
+            if (b == Button1.Start) return (this.Buttons1 & (int)b) > 0;
             return false;
         }
     }
 
-    public enum Button
+    public enum Button0
     {
         X = 1,
         A = 2,
@@ -42,6 +42,12 @@ namespace Orbiter.Components
         Y = 8,
         L = 16,
         R = 64,
+    }
+
+    public enum Button1
+    {
+        Select = 1,
+        Start = 2,
     }
 
     public class JoystickServer : Component
@@ -70,7 +76,6 @@ namespace Orbiter.Components
             lock (this.stateLock)
             {
                 this.states[joystickInfo.ControllerId] = joystickInfo;
-                // TODO BUTTON4;
             }
         }
 

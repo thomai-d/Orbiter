@@ -46,8 +46,10 @@ namespace Orbiter
             EnableGestureManipulation = true;
             EnableGestureTapped = true;
 
+            // TODO Selber erstellen
+            DirectionalLight.Node.SetWorldPosition(new Vector3(0, 1.5f, 0));
             DirectionalLight.Brightness = 1f;
-            DirectionalLight.Node.SetDirection(new Vector3(-1, 0, 0.5f));
+            DirectionalLight.Node.SetDirection(new Vector3(0, -1, 0));
 
             var physics = this.Scene.GetOrCreateComponent<PhysicsWorld>();
             physics.SetGravity(new Vector3(0, 0, 0));
@@ -74,9 +76,6 @@ namespace Orbiter
 
             var sound = this.Scene.CreateComponent<SoundSource>();
             sound.Play(this.ResourceCache.GetSound("Sound\\Startup.wav"));
-
-            // TODO DEBUG
-            this.planetFactory.AddNewPlanet();
         }
 
         public void Say(string text)

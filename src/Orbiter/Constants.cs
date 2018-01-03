@@ -27,7 +27,7 @@ namespace Orbiter
         /// <summary>
         /// Default rocket lauch velocity.
         /// </summary>
-        public static readonly Vector3 RocketLaunchVelocity = new Vector3(0, 0, 0.5f);
+        public static readonly Vector3 RocketLaunchVelocity = new Vector3(0, 0, 0.0f);
 
         /// <summary>
         /// Doppler effect constaints.
@@ -51,5 +51,10 @@ namespace Orbiter
         public const float PlanetPlaceMinDistance = 0.5f;
         public const float PlanetPlaceDefaultDistance = 2.0f;
         public const float PlanetPlaceMaxDistance = 10.0f;
+
+        /// <summary>
+        /// Rocket acceleration.
+        /// </summary>
+        public static float RocketAccelerationVelocity = 0.3f;
     }
 }

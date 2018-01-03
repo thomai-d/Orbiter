@@ -17491,12 +17491,12 @@
   },
   "project": {
     "restore": {
-      "projectUniqueName": "D:\\git\\Orbiter\\Orbiter\\Orbiter.csproj",
+      "projectUniqueName": "D:\\git\\Orbiter\\src\\Orbiter\\Orbiter.csproj",
       "projectName": "Orbiter",
-      "projectPath": "D:\\git\\Orbiter\\Orbiter\\Orbiter.csproj",
-      "projectJsonPath": "D:\\git\\Orbiter\\Orbiter\\project.json",
+      "projectPath": "D:\\git\\Orbiter\\src\\Orbiter\\Orbiter.csproj",
+      "projectJsonPath": "D:\\git\\Orbiter\\src\\Orbiter\\project.json",
       "packagesPath": "C:\\Users\\tmaisel\\.nuget\\packages\\",
-      "outputPath": "D:\\git\\Orbiter\\Orbiter\\obj\\",
+      "outputPath": "D:\\git\\Orbiter\\src\\Orbiter\\obj\\",
       "projectStyle": "ProjectJson",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackagesFallback\\"

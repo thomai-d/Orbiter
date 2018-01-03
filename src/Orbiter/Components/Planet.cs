@@ -15,7 +15,8 @@ namespace Orbiter.Components
     public enum PlanetType
     {
         Earth,
-        Moon
+        Moon,
+        Mars
     }
 
     public class Planet : Component
@@ -39,6 +40,10 @@ namespace Orbiter.Components
 
                 case PlanetType.Moon:
                     earth.Material = Material.FromImage("Textures/Moon.jpg");
+                    break;
+
+                case PlanetType.Mars:
+                    earth.Material = Material.FromImage("Textures/Mars.jpg");
                     break;
             }
         }
