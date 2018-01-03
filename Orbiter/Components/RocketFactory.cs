@@ -34,7 +34,6 @@ namespace Orbiter.Components
             if (this.Node != this.Scene)
                 throw new InvalidOperationException("RocketFactory should be attached to the scene");
 
-            // TODO Names in static class
             this.cameraNode = this.Scene.GetChild("MainCamera", false) 
                 ?? throw new InvalidOperationException("'MainCamera' not found");
 
@@ -42,9 +41,7 @@ namespace Orbiter.Components
                 ?? throw new InvalidOperationException("'PlanetFactory' not found");
 
             this.rocketsNode = this.Node.CreateChild("Rockets");
-
             this.soundSource = this.Node.CreateComponent<SoundSource>();
-            this.soundSource.Gain = 1.0f;
         }
 
         public void Fire()
@@ -54,7 +51,7 @@ namespace Orbiter.Components
             var rocketNode = this.rocketsNode.CreateChild();
             var rocket = rocketNode.CreateComponent<Rocket>();
 
-            rocketNode.SetWorldPosition(this.cameraNode.WorldPosition + this.cameraNode.WorldRotation * new Vector3(0, 0, 0.5f));
+            rocketNode.SetWorldPosition(this.cameraNode.WorldPosition + this.cameraNode.WorldRotation * Constants.RocketRelativeStartOffset);
             rocketNode.SetWorldRotation(this.cameraNode.WorldRotation);
         }
 

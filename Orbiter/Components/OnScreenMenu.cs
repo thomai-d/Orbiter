@@ -93,7 +93,6 @@ namespace Orbiter.Components
             backNode.Translate(new Vector3(0, 0, 0.01f));
             backNode.ScaleNode(new Vector3(maxWidth + 0.2f, vlineoffset * (menu.SubItems.Length + 3), 0.01f));
 
-            // TODO Sound files in static class
             if (this.showMenuTcs == null)
             {
                 this.soundSource.Play(Application.ResourceCache.GetSound("Sound\\Yay.wav"));

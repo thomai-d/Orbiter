@@ -22,7 +22,7 @@ namespace Orbiter.Components
 
         public bool IsButtonDown(Button b)
         {
-            // TODO Other buttons
+            // TODO Other buttons && Joystick host on here.
             if (b == Button.A) return (this.Buttons0 & (int)b) > 0;
             if (b == Button.B) return (this.Buttons0 & (int)b) > 0;
             if (b == Button.X) return (this.Buttons0 & (int)b) > 0;

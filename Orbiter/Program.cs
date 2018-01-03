@@ -74,6 +74,9 @@ namespace Orbiter
 
             var sound = this.Scene.CreateComponent<SoundSource>();
             sound.Play(this.ResourceCache.GetSound("Sound\\Startup.wav"));
+
+            // TODO DEBUG
+            this.planetFactory.AddNewPlanet();
         }
 
         public void Say(string text)

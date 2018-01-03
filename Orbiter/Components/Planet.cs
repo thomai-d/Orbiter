@@ -1,4 +1,5 @@
-﻿using Orbiter.Services;
+﻿using Orbiter.Helpers;
+using Orbiter.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,32 +12,22 @@ using Urho.Shapes;
 
 namespace Orbiter.Components
 {
+    public enum PlanetType
+    {
+        Earth,
+        Moon
+    }
+
     public class Planet : Component
     {
-        private float size = 0.3f;
+        public float Mass { get; private set; }
 
-        public float Size
+        public void Place(PlanetType type, Vector3 position, float diameter)
         {
-            get => this.size;
-            set
-            {
-                this.size = value;
-                this.Node.SetScale(value);
-            }
-        }
+            this.Node.SetScale(diameter);
+            this.Mass = Physics.PlanetDiameterToMass(diameter);
+            this.Node.SetWorldPosition(position);
 
-        public Vector3 Position
-        {
-            get => this.Node.WorldPosition;
-            set
-            {
-                this.Node.SetWorldPosition(value);
-            }
-        }
-
-        // TODO Constructor
-        public void Initialize(PlanetType type)
-        {
             var earth = this.Node.CreateComponent<Sphere>();
             this.Node.RunActions(new RepeatForever(new RotateBy(duration: 1f, deltaAngleX: 0, deltaAngleY: -4, deltaAngleZ: 0)));
 
@@ -51,11 +42,5 @@ namespace Orbiter.Components
                     break;
             }
         }
-    }
-
-    public enum PlanetType
-    {
-        Earth,
-        Moon
     }
 }

@@ -54,8 +54,10 @@
     <Compile Include="Components\Rocket.cs" />
     <Compile Include="Components\RocketFactory.cs" />
     <Compile Include="Components\VoiceRecognition.cs" />
+    <Compile Include="Constants.cs" />
     <Compile Include="Helpers\ByteHelper.cs" />
     <Compile Include="Helpers\MovingAverage.cs" />
+    <Compile Include="Helpers\Physics.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Components\FocusManager.cs" />

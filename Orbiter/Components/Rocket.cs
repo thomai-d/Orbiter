@@ -1,25 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using Orbiter.Helpers;
+using System;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Urho;
 using Urho.Audio;
-using Urho.Gui;
 using Urho.Physics;
-using Urho.Resources;
-using Urho.Shapes;
 
 namespace Orbiter.Components
 {
     public class Rocket : Component
     {
-        private PlanetFactory planetFactory;
-        private JoystickServer joystickServer;
         private Node cameraNode;
         private RigidBody rigidBody;
-        private Text3D text3D;
+        private PlanetFactory planetFactory;
+        private JoystickServer joystickServer;
+        private SoundSource3D soundComponent;
+        private float soundBaseFrequency;
 
         public Rocket()
         {
@@ -41,24 +36,22 @@ namespace Orbiter.Components
                 ?? throw new InvalidOperationException("'MainCamera' not found");
 
             var planeModel = this.Node.CreateComponent<StaticModel>();
-            // TODO Naming, Sound => Sounds, Material
             planeModel.Model = this.Application.ResourceCache.GetModel("Models\\Cube.mdl");
-            this.Node.Rotate(new Quaternion(0, 180, 0), TransformSpace.World);
             this.Node.SetScale(0.01f);
 
             this.rigidBody = this.Node.CreateComponent<RigidBody>();
-            this.rigidBody.Mass = 1.0f;
+            this.rigidBody.Mass = Constants.RocketDefaultMass;
             this.rigidBody.LinearRestThreshold = 0.001f;
 
-            // TODO Constant
-            rigidBody.SetLinearVelocity(this.cameraNode.Rotation * new Vector3(0, 0, 0.5f));
+            rigidBody.SetLinearVelocity(this.cameraNode.Rotation * Constants.RocketLaunchVelocity);
 
-            var soundComponent = this.Node.CreateComponent<SoundSource3D>();
+            this.soundComponent = this.Node.CreateComponent<SoundSource3D>();
             var sound = this.Application.ResourceCache.GetSound("Sound\\Rocket.wav");
             sound.Looped = true;
-            soundComponent.Play(sound);
-            soundComponent.Gain = 0.1f;
-            soundComponent.SetDistanceAttenuation(0.0f, 1.5f, 1.0f);
+            this.soundComponent.Play(sound);
+            this.soundComponent.Gain = 0.1f;
+            this.soundComponent.SetDistanceAttenuation(0.0f, 1.5f, 1.0f);
+            this.soundBaseFrequency = this.soundComponent.Frequency;
         }
 
         protected override void OnUpdate(float timeStep)
@@ -70,14 +63,9 @@ namespace Orbiter.Components
             var newGravity = Vector3.Zero;
             foreach (var planetNode in this.planetFactory.PlanetNodes)
             {
-                var distance = Vector3.Distance(this.Node.WorldPosition, planetNode.WorldPosition);
-                var force = (0.1f) / Math.Pow(distance, 2);
-                var displace = (planetNode.WorldPosition - this.Node.WorldPosition);
-                displace.Normalize();
-                newGravity += displace * (float)force;
+                newGravity += Physics.Gravity(this.Node.WorldPosition, planetNode.WorldPosition, 
+                    this.rigidBody.Mass, planetNode.GetComponent<Planet>().Mass) / this.rigidBody.Mass;
             }
-
-            // TODO Understand quaternion vector + what is slerp, what is euler angles
 
             // TODO time in rotation
             var joyState = this.joystickServer.GetJoystick(0);
@@ -86,22 +74,17 @@ namespace Orbiter.Components
             if (joyState.IsButtonDown(Button.L)) this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitY, -1.0f), TransformSpace.Local);
             if (joyState.IsButtonDown(Button.R)) this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitY, 1.0f), TransformSpace.Local);
 
-            // TODO Acceleration + Mass as Property + Units
             if (joyState.IsButtonDown(Button.B))
-            {
                 newGravity += (this.Node.WorldRotation * Vector3.Forward) * 0.5f;
-            }
+
             if (joyState.IsButtonDown(Button.Y))
-            {
                 newGravity -= (this.Node.WorldRotation * Vector3.Forward) * 0.5f;
-            }
+
             if (joyState.IsButtonDown(Button.X))
             {
                 newGravity = Vector3.Zero;
                 rigidBody.SetLinearVelocity(Vector3.Zero);
             }
-
-            // TODO v = f / m
 
             rigidBody.GravityOverride = newGravity;
         }
@@ -109,10 +92,9 @@ namespace Orbiter.Components
         private void ApplyDopplerEffect()
         {
             var o = this.Node.WorldPosition;
-            var c = this.Node.WorldPosition;
+            var c = this.cameraNode.WorldPosition;
             var v = rigidBody.LinearVelocity;
-            var delta = (o - c).LengthFast - (o - c + v).LengthFast;
-            this.Node.GetComponent<SoundSource3D>().Frequency = 44100f * (1f + delta);
+            this.soundComponent.Frequency = this.soundBaseFrequency * Physics.Doppler(c, o, v);
         }
     }
 }

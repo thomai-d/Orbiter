@@ -22,20 +22,14 @@ namespace Orbiter.Components
     /// </summary>
     public class PlanetFactory : Component, IFocusElement
     {
-        public const float ManipulateBoostFactor = 5.0f;
-        public const float MinDistance = 0.5f;
-        public const float DefaultDistance = 2.0f;
-        public const float MaxDistance = 10.0f;
-
-        private float distance = DefaultDistance;
+        private float distance = Constants.PlanetPlaceDefaultDistance;
 
         private Node cameraNode;
+        private Node planetsRoot;
         private Node tempPlanetNode;
         private SoundSource soundSource;
-        private MovingAverage averageLocation = new MovingAverage(25);
         private FocusManager focusManager;
-
-        private Node planetsRoot;
+        private MovingAverage averageLocation = new MovingAverage(25);
 
         public PlanetFactory()
         {
@@ -53,10 +47,7 @@ namespace Orbiter.Components
                 ?? throw new InvalidOperationException("'MainCamera' not found");
 
             this.focusManager = this.Scene.GetComponent<FocusManager>();
-
             this.soundSource = this.Node.CreateComponent<SoundSource>();
-            this.soundSource.Gain = 1.0f;
-
             this.planetsRoot = this.Node.CreateChild("Planets");
         }
 
@@ -64,10 +55,7 @@ namespace Orbiter.Components
         {
             this.tempPlanetNode = this.planetsRoot.CreateChild("Planet");
             var planet = this.tempPlanetNode.CreateComponent<Planet>();
-
-            planet.Initialize(PlanetType.Earth);
-            planet.Position = new Vector3(0, 0, this.distance);
-            planet.Size = 0.3f;
+            planet.Place(PlanetType.Earth, new Vector3(0, 0, this.distance), Constants.PlanetDefaultDiameter);
 
             this.focusManager.SetFocus(this);
 
@@ -93,9 +81,8 @@ namespace Orbiter.Components
             if (this.tempPlanetNode == null)
                 return;
             
-            var headPosition = this.cameraNode.WorldPosition;
             var rotation = this.cameraNode.Rotation;
-
+            var headPosition = this.cameraNode.WorldPosition;
             averageLocation.AddSample(headPosition + (rotation * new Vector3(0, 0, this.distance)));
             this.tempPlanetNode.SetWorldPosition(averageLocation.Average);
             this.tempPlanetNode.SetWorldRotation(rotation);
@@ -129,11 +116,11 @@ namespace Orbiter.Components
 
         public void Manipulate(Vector3 relGlobal, Vector3 relCamera, Vector3 relCameraDiff)
         {
-            // Don't manipulate if no planet is about to be placed.
             if (this.tempPlanetNode == null)
                 return;
 
-            this.distance = Math.Min(Math.Max(MinDistance, distance + relCameraDiff.Z * ManipulateBoostFactor), MaxDistance);
+            var dist = distance + relCameraDiff.Z * Constants.PlanetManipulateBoostFactor;
+            this.distance = Math.Min(Math.Max(Constants.PlanetPlaceMinDistance, dist), Constants.PlanetPlaceMaxDistance);
         }
     }
 }
