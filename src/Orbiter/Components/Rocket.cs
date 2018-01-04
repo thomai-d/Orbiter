@@ -19,6 +19,7 @@ namespace Orbiter.Components
         private JoystickServer joystickServer;
         private SoundSource3D rocketSoundSource;
         private float soundBaseFrequency;
+        private SoundSource3D collisionSoundSource;
         private SoundSource3D engineSoundSource;
         private Sound engineSound;
         private ParticleEmitter engineParticleEmitter;
@@ -47,9 +48,7 @@ namespace Orbiter.Components
 
             // Explosion
             this.collisionParticleEmitter.Enabled = true;
-            this.rocketSoundSource.Gain = 1.0f;
-            this.rocketSoundSource.Frequency = this.soundBaseFrequency;
-            this.rocketSoundSource.Play(this.collisionSound);
+            this.collisionSoundSource.Play(this.collisionSound);
 
             await Task.Delay(100);
             this.geometryNode.Remove();
@@ -106,18 +105,22 @@ namespace Orbiter.Components
 
             // Background sound.
             this.rocketSoundSource = this.Node.CreateComponent<SoundSource3D>();
-            this.rocketSoundSource.SetDistanceAttenuation(0.0f, 2.5f, 1.0f);
+            this.rocketSoundSource.SetDistanceAttenuation(0.0f, 2.0f, 1.0f);
             var sound = this.Application.ResourceCache.GetSound("Sound\\Rocket.wav");
             sound.Looped = true;
-            this.collisionSound = this.Application.ResourceCache.GetSound("Sound\\Collision.wav");
             this.rocketSoundSource.Play(sound);
             this.rocketSoundSource.Gain = 0.1f;
             this.soundBaseFrequency = this.rocketSoundSource.Frequency;
 
+            // Collision sound.
+            this.collisionSoundSource = this.Node.CreateComponent<SoundSource3D>();
+            this.collisionSound = this.Application.ResourceCache.GetSound("Sound\\Collision.wav");
+            this.collisionSoundSource.SetDistanceAttenuation(0.0f, 5.0f, 3.0f);
+
             // Engine sound.
             this.engineSoundSource = this.Node.CreateComponent<SoundSource3D>();
-            this.engineSoundSource.SetDistanceAttenuation(0.0f, 2.5f, 1.0f);
             this.engineSound = this.Application.ResourceCache.GetSound("Sound\\RocketEngine.wav");
+            this.engineSoundSource.SetDistanceAttenuation(0.0f, 5.0f, 1.0f);
             this.engineSound.Looped = true;
         }
 
