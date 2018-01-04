@@ -27,17 +27,140 @@ namespace Orbiter
 
     public class OrbiterApplication : StereoApplication, IFocusElement
     {
+        // Components.
         private OnScreenMenu onScreenMenu;
         private FocusManager focusManager;
         private PlanetFactory planetFactory;
         private VoiceRecognition voiceRecognition;
         private JoystickServer joystickServer;
+        private RocketFactory rocketFactory;
+        private Grid grid;
+
+        // Variables needed for manipulation calculation.
+        private Vector3 lastManipulationVector = Vector3.Zero;
+        private Vector3 cameraStartPos = Vector3.Zero;
+
+        // Objects.
+        private Node environmentNode;
+        private Material spatialMaterial;
+
+        // Flags.
+        private bool isDebugging = false;
+        private bool isManipulationInProgress = false;
 
         public OrbiterApplication(ApplicationOptions opts) : base(opts)
         {
         }
 
-        protected override void Start()
+        public MenuItem[] ContextMenu
+        {
+            get
+            {
+                return new[] 
+                {
+                    new MenuItem("Add planet", () => this.planetFactory.AddNewPlanet(), "add planet"),
+                    new MenuItem("Remove planets", () => this.planetFactory.RemovePlanets(), "remove planets"),
+                    new MenuItem("Start rocket", () => this.rocketFactory.Fire(), "start rocket"),
+                    new MenuItem("Remove rockets", () => this.rocketFactory.RemoveRockets(), "remove rockets"),
+                    new MenuItem("Toggle debug", () => { this.SetDebug(!this.isDebugging); }, "toggle debug"),
+                };
+            }
+        }
+
+        // Public.
+
+        public override void OnGestureTapped()
+        {
+            if (this.isManipulationInProgress)
+                return;
+
+            if (this.focusManager.HandleTap())
+                return;
+        }
+
+        public override void OnGestureManipulationStarted()
+        {
+            base.OnGestureManipulationStarted();
+            this.lastManipulationVector = Vector3.Zero;
+            this.cameraStartPos = this.LeftCamera.Node.WorldPosition;
+        }
+
+        public override void OnGestureManipulationUpdated(Vector3 relGlobalPos)
+        {
+            base.OnGestureManipulationUpdated(relGlobalPos);
+
+            this.isManipulationInProgress = true;
+
+            var cameraVector = this.LeftCamera.Node.Position - this.cameraStartPos;
+            var relLocalPos = Quaternion.Invert(this.LeftCamera.Node.Rotation) * (relGlobalPos - cameraVector);
+
+            this.focusManager.Manipulate(relGlobalPos, relLocalPos, relLocalPos - this.lastManipulationVector);
+            this.lastManipulationVector = relLocalPos;
+        }
+
+        public override void OnGestureManipulationCompleted(Vector3 relativeHandPosition)
+        {
+            base.OnGestureManipulationCompleted(relativeHandPosition);
+            isManipulationInProgress = false;
+        }
+
+        public override void OnGestureManipulationCanceled()
+        {
+            base.OnGestureManipulationCanceled();
+            isManipulationInProgress = false;
+        }
+
+        public void GotFocus()
+        {
+        }
+
+        public void LostFocus()
+        {
+        }
+
+        public void Tap()
+        {
+            this.rocketFactory.Fire();
+        }
+
+        public void Manipulate(Vector3 relGlobal, Vector3 relCamera, Vector3 relCameraDiff)
+        { 
+        }
+
+        public override void OnSurfaceAddedOrUpdated(SpatialMeshInfo surface, Model generatedModel)
+        {
+            bool isNew = false;
+            StaticModel staticModel = null;
+            Node node = environmentNode.GetChild(surface.SurfaceId, false);
+            if (node != null)
+            {
+                isNew = false;
+                staticModel = node.GetComponent<StaticModel>();
+            }
+            else
+            {
+                isNew = true;
+                node = environmentNode.CreateChild(surface.SurfaceId);
+                staticModel = node.CreateComponent<StaticModel>();
+            }
+
+            node.Position = surface.BoundsCenter;
+            node.Rotation = surface.BoundsRotation;
+            staticModel.Model = generatedModel;
+
+            if (isNew)
+            {
+                staticModel.SetMaterial(this.spatialMaterial);
+                var collisionShape = node.CreateComponent<CollisionShape>();
+                collisionShape.SetTriangleMesh(generatedModel, 0, Vector3.One, Vector3.Zero, Quaternion.Identity);
+                var rigidBoy = node.CreateComponent<RigidBody>();
+                rigidBoy.Mass = 0;
+            }
+        }
+
+        // Protected.
+
+        protected override async void Start()
         {
             base.Start();
 
@@ -46,13 +169,13 @@ namespace Orbiter
             EnableGestureManipulation = true;
             EnableGestureTapped = true;
 
-            // TODO Selber erstellen
             DirectionalLight.Node.SetWorldPosition(new Vector3(0, 1.5f, 0));
             DirectionalLight.Brightness = 1f;
             DirectionalLight.Node.SetDirection(new Vector3(0, -1, 0));
 
             var physics = this.Scene.GetOrCreateComponent<PhysicsWorld>();
             physics.SetGravity(new Vector3(0, 0, 0));
+            physics.PhysicsCollisionStart += this.OnCollisionStart;
 
             this.voiceRecognition = this.Scene.CreateComponent<VoiceRecognition>();
             this.voiceRecognition.SetRegisterCallback(this.RegisterCortanaCommands);
@@ -74,13 +197,18 @@ namespace Orbiter
             var listener = this.LeftCamera.Node.CreateComponent<SoundListener>();
             Audio.Listener = listener;
 
+            // Material for spatial surfaces
+            this.spatialMaterial = new Material();
+            this.spatialMaterial.SetTechnique(0, CoreAssets.Techniques.NoTextureUnlitVCol, 1, 1);
+            this.environmentNode = this.Scene.CreateChild("Environment");
+
+            // make sure 'spatialMapping' capabilaty is enabled in the app manifest.
+            var spatialMappingAllowed = await StartSpatialMapping(new Vector3(20, 20, 5), 50);
+            if (!spatialMappingAllowed)
+                throw new InvalidOperationException("SpatialMapping is not allowed");
+
             var sound = this.Scene.CreateComponent<SoundSource>();
             sound.Play(this.ResourceCache.GetSound("Sound\\Startup.wav"));
-        }
-
-        public void Say(string text)
-        {
-            this.TextToSpeech(text);
         }
 
         protected override void OnUpdate(float timeStep)
@@ -91,99 +219,36 @@ namespace Orbiter
                 ?? LeftCamera.Node.WorldPosition + LeftCamera.Node.WorldRotation * Vector3.Forward * 2;
         }
 
+        // Private.
+
+        private void OnCollisionStart(PhysicsCollisionStartEventArgs obj)
+        {
+            obj.NodeA.GetComponent<Rocket>()?.OnCollision();
+            obj.NodeB.GetComponent<Rocket>()?.OnCollision();
+        }
+
         private RayQueryResult? Raycast()
         {
             Ray cameraRay = LeftCamera.GetScreenRay(0.5f, 0.5f);
             return Scene.GetComponent<Octree>().RaycastSingle(cameraRay, RayQueryLevel.Triangle, 100, DrawableFlags.Geometry, 0x70000000);
         }
 
-        public override void OnGestureTapped()
+        private void DrawGebugGeometry(PostRenderUpdateEventArgs _)
         {
-            // Ignore taps when manipulating.
-            if (this.isManipulating)
-                return;
-
-            // Check if the tap selected something.
-            //var ray = Raycast();
-            //if (ray.HasValue)
-            //{
-
-            //}
-
-            // Is some object focused that may handle the tap?
-            if (this.focusManager.HandleTap())
-                return;
+            var debugRendererComp = this.Scene.GetComponent<DebugRenderer>();
+            var physicsComp = this.Scene.GetComponent<PhysicsWorld>();
+            physicsComp.DrawDebugGeometry(debugRendererComp, depthTest: false);
         }
 
-        private bool isManipulating = false;
-
-        public override void OnGestureManipulationStarted()
+        private void SetDebug(bool newValue)
         {
-            base.OnGestureManipulationStarted();
-            this.lastManipulationVector = Vector3.Zero;
-            this.cameraStartPos = this.LeftCamera.Node.WorldPosition;
-        }
-
-        private Vector3 lastManipulationVector = Vector3.Zero;
-        private Vector3 cameraStartPos = Vector3.Zero;
-        private RocketFactory rocketFactory;
-        private Grid grid;
-
-        public MenuItem[] ContextMenu
-        {
-            get
-            {
-                return new[] 
-                {
-                    new MenuItem("Add planet", () => this.planetFactory.AddNewPlanet(), "add planet"),
-                    new MenuItem("Remove planets", () => this.planetFactory.RemovePlanets(), "remove planets"),
-                    new MenuItem("Start rocket", () => this.rocketFactory.Fire(), "start rocket"),
-                    new MenuItem("Remove rockets", () => this.rocketFactory.RemoveRockets(), "remove rockets"),
-                    new MenuItem("Toggle grid", () => { this.grid.GridVisibility = !this.grid.GridVisibility; }, "toggle grid"),
-                };
-            }
-        }
-
-        public override void OnGestureManipulationUpdated(Vector3 relGlobalPos)
-        {
-            base.OnGestureManipulationUpdated(relGlobalPos);
-
-            this.isManipulating = true;
-
-            var cameraVector = this.LeftCamera.Node.Position - this.cameraStartPos;
-            var relLocalPos = Quaternion.Invert(this.LeftCamera.Node.Rotation) * (relGlobalPos - cameraVector);
-
-            this.focusManager.Manipulate(relGlobalPos, relLocalPos, relLocalPos - this.lastManipulationVector);
-            this.lastManipulationVector = relLocalPos;
-        }
-
-        public override void OnGestureManipulationCompleted(Vector3 relativeHandPosition)
-        {
-            base.OnGestureManipulationCompleted(relativeHandPosition);
-            isManipulating = false;
-        }
-
-        public override void OnGestureManipulationCanceled()
-        {
-            base.OnGestureManipulationCanceled();
-            isManipulating = false;
-        }
-
-        public void GotFocus()
-        {
-        }
-
-        public void LostFocus()
-        {
-        }
-
-        public void Tap()
-        {
-            this.rocketFactory.Fire();
-        }
-
-        public void Manipulate(Vector3 relGlobal, Vector3 relCamera, Vector3 relCameraDiff)
-        { 
+            this.isDebugging = newValue;
+            this.grid.GridVisibility = newValue;
+            this.Scene.GetOrCreateComponent<DebugRenderer>();
+            if (newValue)
+                this.Engine.PostRenderUpdate += this.DrawGebugGeometry;
+            else
+                this.Engine.PostRenderUpdate -= this.DrawGebugGeometry;
         }
     }
 }

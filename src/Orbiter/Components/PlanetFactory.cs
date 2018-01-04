@@ -55,7 +55,7 @@ namespace Orbiter.Components
         {
             this.tempPlanetNode = this.planetsRoot.CreateChild("Planet");
             var planet = this.tempPlanetNode.CreateComponent<Planet>();
-            planet.Place(PlanetType.Earth, new Vector3(0, 0, this.distance), Constants.PlanetDefaultDiameter);
+            planet.Place(new Vector3(0, 0, this.distance), Constants.PlanetDefaultDiameter);
 
             this.focusManager.SetFocus(this);
 

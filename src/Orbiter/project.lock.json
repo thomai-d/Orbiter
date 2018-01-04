@@ -17486,30 +17486,30 @@
     "UAP,Version=v10.0.10586": []
   },
   "packageFolders": {
-    "C:\\Users\\tmaisel\\.nuget\\packages\\": {},
+    "C:\\Users\\Hans\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackagesFallback\\": {}
   },
   "project": {
     "restore": {
-      "projectUniqueName": "D:\\git\\Orbiter\\src\\Orbiter\\Orbiter.csproj",
+      "projectUniqueName": "D:\\Dev\\Projects\\Orbiter\\src\\Orbiter\\Orbiter.csproj",
       "projectName": "Orbiter",
-      "projectPath": "D:\\git\\Orbiter\\src\\Orbiter\\Orbiter.csproj",
-      "projectJsonPath": "D:\\git\\Orbiter\\src\\Orbiter\\project.json",
-      "packagesPath": "C:\\Users\\tmaisel\\.nuget\\packages\\",
-      "outputPath": "D:\\git\\Orbiter\\src\\Orbiter\\obj\\",
+      "projectPath": "D:\\Dev\\Projects\\Orbiter\\src\\Orbiter\\Orbiter.csproj",
+      "projectJsonPath": "D:\\Dev\\Projects\\Orbiter\\src\\Orbiter\\project.json",
+      "packagesPath": "C:\\Users\\Hans\\.nuget\\packages\\",
+      "outputPath": "D:\\Dev\\Projects\\Orbiter\\src\\Orbiter\\obj\\",
       "projectStyle": "ProjectJson",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackagesFallback\\"
       ],
       "configFilePaths": [
-        "C:\\Users\\tmaisel\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Hans\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.Fallback.config"
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-        "D:\\nextcloud\\tmaisel\\Loepfe\\NuGet": {},
-        "D:\\nextcloud\\tmaisel\\NuGet": {},
+        "C:\\Users\\Hans\\.dotnet\\NuGetFallbackFolder": {},
+        "D:\\Dev\\NugetPackages": {},
         "https://api.nuget.org/v3/index.json": {}
       }
     },

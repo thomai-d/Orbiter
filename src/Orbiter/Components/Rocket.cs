@@ -2,6 +2,8 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Urho;
 using Urho.Audio;
 using Urho.Physics;
@@ -11,6 +13,7 @@ namespace Orbiter.Components
     public class Rocket : Component
     {
         private Node cameraNode;
+        private Node geometryNode;
         private RigidBody rigidBody;
         private PlanetFactory planetFactory;
         private JoystickServer joystickServer;
@@ -18,11 +21,44 @@ namespace Orbiter.Components
         private float soundBaseFrequency;
         private SoundSource3D engineSoundSource;
         private Sound engineSound;
-        private ParticleEmitter particleEmitter;
+        private ParticleEmitter engineParticleEmitter;
+        private CollisionShape collisionShape;
+        private ParticleEmitter collisionParticleEmitter;
+        private Sound collisionSound;
+
+        private bool isCollided = false;
 
         public Rocket()
         {
             this.ReceiveSceneUpdates = true;
+        }
+
+        public async void OnCollision()
+        {
+            if (this.isCollided)
+                return;
+
+            // Stop animations / sounds / gravity.
+            this.isCollided = true;
+            this.engineParticleEmitter.Enabled = false;
+            this.engineSoundSource.Stop();
+            this.rocketSoundSource.Stop();
+            this.rigidBody.GravityOverride = Vector3.Zero;
+
+            // Explosion
+            this.collisionParticleEmitter.Enabled = true;
+            this.rocketSoundSource.Gain = 1.0f;
+            this.rocketSoundSource.Frequency = this.soundBaseFrequency;
+            this.rocketSoundSource.Play(this.collisionSound);
+
+            await Task.Delay(100);
+            this.geometryNode.Remove();
+
+            await Task.Delay(1000);
+            this.collisionParticleEmitter.Emitting = false;
+
+            await Task.Delay(1500);
+            this.Node.Remove();
         }
 
         public override void OnAttachedToNode(Node node)
@@ -39,29 +75,41 @@ namespace Orbiter.Components
                 ?? throw new InvalidOperationException("'MainCamera' not found");
 
             // Geometry.
-            var geometryNode = this.Node.CreateChild("Geometry");
-            var planeModel = geometryNode.CreateComponent<StaticModel>();
-            planeModel.Model = this.Application.ResourceCache.GetModel("Models\\Cube.mdl");
-            geometryNode.SetScale(0.01f);
+            this.geometryNode = this.Node.CreateChild("Geometry");
+            var planeModel = this.geometryNode.CreateComponent<StaticModel>();
+            planeModel.Model = this.Application.ResourceCache.GetModel("Models\\Rocket.mdl");
 
             // Gravity.
             this.rigidBody = this.Node.CreateComponent<RigidBody>();
             this.rigidBody.Mass = Constants.RocketDefaultMass;
             this.rigidBody.LinearRestThreshold = 0.0003f;
+            this.rigidBody.AngularDamping = 0;
+            this.rigidBody.SetAngularFactor(Vector3.Zero);
             rigidBody.SetLinearVelocity(this.cameraNode.Rotation * Constants.RocketLaunchVelocity);
 
             // Engine particle emitter.
-            var particleNode = this.Node.CreateChild("RocketEngine");
-            this.particleEmitter = particleNode.CreateComponent<ParticleEmitter>();
-            this.particleEmitter.Effect = this.Application.ResourceCache.GetParticleEffect("Particle\\RocketEngine.xml");
-            this.particleEmitter.Emitting = false;
-            particleNode.Translate(new Vector3(0, 0, -0.03f));
+            var engineParticleNode = this.Node.CreateChild("RocketEngine");
+            this.engineParticleEmitter = engineParticleNode.CreateComponent<ParticleEmitter>();
+            this.engineParticleEmitter.Enabled = false;
+            this.engineParticleEmitter.Effect = this.Application.ResourceCache.GetParticleEffect("Particle\\RocketEngine.xml");
+            engineParticleNode.Translate(new Vector3(0, 0, -0.03f));
+
+            // Collision particles.
+            var collisionParticleNode = this.Node.CreateChild("CollisionParticle");
+            this.collisionParticleEmitter = collisionParticleNode.CreateComponent<ParticleEmitter>();
+            this.collisionParticleEmitter.Enabled = false;
+            this.collisionParticleEmitter.Effect = this.Application.ResourceCache.GetParticleEffect("Particle\\Explosion.xml");
+
+            // Collision detection.
+            this.collisionShape = this.Node.CreateComponent<CollisionShape>();
+            this.collisionShape.SetCylinder(0.07f, 0.015f, Vector3.Zero, Quaternion.Identity);
 
             // Background sound.
             this.rocketSoundSource = this.Node.CreateComponent<SoundSource3D>();
             this.rocketSoundSource.SetDistanceAttenuation(0.0f, 2.5f, 1.0f);
             var sound = this.Application.ResourceCache.GetSound("Sound\\Rocket.wav");
             sound.Looped = true;
+            this.collisionSound = this.Application.ResourceCache.GetSound("Sound\\Collision.wav");
             this.rocketSoundSource.Play(sound);
             this.rocketSoundSource.Gain = 0.1f;
             this.soundBaseFrequency = this.rocketSoundSource.Frequency;
@@ -71,24 +119,38 @@ namespace Orbiter.Components
             this.engineSoundSource.SetDistanceAttenuation(0.0f, 2.5f, 1.0f);
             this.engineSound = this.Application.ResourceCache.GetSound("Sound\\RocketEngine.wav");
             this.engineSound.Looped = true;
-
-            this.engineSoundSource.Play(this.engineSound);
         }
 
         protected override void OnUpdate(float timeStep)
         {
             base.OnUpdate(timeStep);
 
+            if (this.isCollided)
+                return;
+
             this.ApplyDopplerEffect();
 
             var newGravity = Vector3.Zero;
+            newGravity = this.ApplyGravity(newGravity);
+            newGravity = this.ApplyJoystickInput(newGravity);
+            rigidBody.GravityOverride = newGravity;
+        }
+
+        private Vector3 ApplyGravity(Vector3 newGravity)
+        {
             foreach (var planetNode in this.planetFactory.PlanetNodes)
             {
-                newGravity += Physics.Gravity(this.Node.WorldPosition, planetNode.WorldPosition, 
+                newGravity += Physics.Gravity(this.Node.WorldPosition, planetNode.WorldPosition,
                     this.rigidBody.Mass, planetNode.GetComponent<Planet>().Mass) / this.rigidBody.Mass;
             }
 
-            // TODO time in rotation
+            return newGravity;
+        }
+
+        private Vector3 ApplyJoystickInput(Vector3 newGravity)
+        {
+            // TODO rotation should be dependent on time.
+
             var joyState = this.joystickServer.GetJoystick(0);
             this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitX, -joyState.Y * 2.0f), TransformSpace.Local);
             this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitZ, -joyState.X * 2.0f), TransformSpace.Local);
@@ -101,7 +163,7 @@ namespace Orbiter.Components
                 if (!this.engineSoundSource.Playing)
                 {
                     this.engineSoundSource.Play(this.engineSound);
-                    this.particleEmitter.Emitting = true;
+                    this.engineParticleEmitter.Enabled = true;
                 }
             }
             else if (joyState.IsButtonDown(Button0.Y))
@@ -110,13 +172,13 @@ namespace Orbiter.Components
                 if (!this.engineSoundSource.Playing)
                 {
                     this.engineSoundSource.Play(this.engineSound);
-                    this.particleEmitter.Emitting = true;
+                    this.engineParticleEmitter.Enabled = true;
                 }
             }
             else if (this.engineSoundSource.Playing)
-            { 
+            {
                 this.engineSoundSource.Stop();
-                this.particleEmitter.Emitting = false;
+                this.engineParticleEmitter.Enabled = false;
             }
 
             if (joyState.IsButtonDown(Button0.X))
@@ -125,7 +187,7 @@ namespace Orbiter.Components
                 rigidBody.SetLinearVelocity(Vector3.Zero);
             }
 
-            rigidBody.GravityOverride = newGravity;
+            return newGravity;
         }
 
         private void ApplyDopplerEffect()
