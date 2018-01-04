@@ -197,13 +197,11 @@ namespace Orbiter
             var listener = this.LeftCamera.Node.CreateComponent<SoundListener>();
             Audio.Listener = listener;
 
-            // Material for spatial surfaces
+            // Spatial mapping.
             this.spatialMaterial = new Material();
             this.spatialMaterial.SetTechnique(0, CoreAssets.Techniques.NoTextureUnlitVCol, 1, 1);
             this.environmentNode = this.Scene.CreateChild("Environment");
-
-            // make sure 'spatialMapping' capabilaty is enabled in the app manifest.
-            var spatialMappingAllowed = await StartSpatialMapping(new Vector3(20, 20, 5), 50);
+            var spatialMappingAllowed = await StartSpatialMapping(new Vector3(3, 3, 2), 1);
             if (!spatialMappingAllowed)
                 throw new InvalidOperationException("SpatialMapping is not allowed");
 

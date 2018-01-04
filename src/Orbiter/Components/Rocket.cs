@@ -195,6 +195,7 @@ namespace Orbiter.Components
 
         private void ApplyDopplerEffect()
         {
+            // TODO: Broken!
             var o = this.Node.WorldPosition;
             var c = this.cameraNode.WorldPosition;
             var v = rigidBody.LinearVelocity;

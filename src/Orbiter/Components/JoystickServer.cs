@@ -1,5 +1,8 @@
 ﻿using Orbiter.Helpers;
 using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Urho;
 using Windows.Networking.Sockets;
@@ -44,6 +47,7 @@ namespace Orbiter.Components
         R = 64,
     }
 
+    // TODO
     public enum Button1
     {
         Select = 1,
@@ -52,30 +56,44 @@ namespace Orbiter.Components
 
     public class JoystickServer : Component
     {
-        public const short UdpPort = 4263;
-
-        private DatagramSocket socket;
+        public const short Port = 4263;
 
         private readonly JoystickInfo[] states = new JoystickInfo[256];
         private readonly object stateLock = new object();
+        private StreamSocketListener socket;
 
         public override async void OnAttachedToNode(Node node)
         {
             base.OnAttachedToNode(node);
 
-            this.socket = new DatagramSocket();
-            this.socket.MessageReceived += this.OnDataReceived;
-            await this.socket.BindServiceNameAsync(UdpPort.ToString());
+            this.socket = new StreamSocketListener();
+            this.socket.ConnectionReceived += this.OnConnectionReceived;
+            await this.socket.BindServiceNameAsync(Port.ToString());
         }
 
-        private void OnDataReceived(DatagramSocket sender, DatagramSocketMessageReceivedEventArgs args)
+        private async void OnConnectionReceived(StreamSocketListener sender, StreamSocketListenerConnectionReceivedEventArgs args)
         {
+            Debug.WriteLine($"Connected to {args.Socket.Information.RemoteAddress}");
+
+            var stream = args.Socket.InputStream.AsStreamForRead();
+
             var buffer = new byte[Marshal.SizeOf<JoystickInfo>()];
-            args.GetDataReader().ReadBytes(buffer);
-            var joystickInfo = ByteHelper.FromBytes<JoystickInfo>(buffer);
-            lock (this.stateLock)
+
+            try
             {
-                this.states[joystickInfo.ControllerId] = joystickInfo;
+                while (true)
+                {
+                    var bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                    var joystickInfo = ByteHelper.FromBytes<JoystickInfo>(buffer);
+                    lock (this.stateLock)
+                    {
+                        this.states[joystickInfo.ControllerId] = joystickInfo;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+            Debug.WriteLine($"Connection to {args.Socket.Information.RemoteAddress} lost");
             }
         }
 
