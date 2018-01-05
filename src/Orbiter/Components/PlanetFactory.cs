@@ -65,7 +65,7 @@ namespace Orbiter.Components
         public void PlacePlanet()
         {
             this.tempPlanetNode = null;
-            this.soundSource.Play(Application.ResourceCache.GetSound("Sound\\Create.wav"));
+            this.soundSource.Play(Application.ResourceCache.GetSound("Sounds\\Create.wav"));
             this.focusManager.SetFocus(null);
         }
 

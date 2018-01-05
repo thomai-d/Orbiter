@@ -45,6 +45,9 @@
     <Content Include="Data\Materials\Particle.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Data\Materials\RocketMaterial.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Data\Models\Rocket.mdl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -74,43 +77,43 @@
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Data\Materials\Exhaust.xml">
+    <Content Include="Data\Particles\Explosion.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\Materials\Plane.xml">
+    <Content Include="Data\Particles\RocketEngine.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\Materials\Window.xml">
+    <Content Include="Data\Sounds\Arrow1.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\Particle\Explosion.xml">
+    <Content Include="Data\Sounds\Collision.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\Particle\RocketEngine.xml">
+    <Content Include="Data\Sounds\Create.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\Sound\Arrow1.wav">
+    <Content Include="Data\Sounds\Rocket.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\Sound\Collision.wav">
+    <Content Include="Data\Sounds\RocketEngine.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\Sound\Create.wav">
+    <Content Include="Data\Sounds\Select.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\Sound\Rocket.wav">
+    <Content Include="Data\Sounds\Startup.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\Sound\RocketEngine.wav">
+    <Content Include="Data\Sounds\Yay.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\Sound\Select.wav">
+    <Content Include="Data\Techniques\Diff.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\Sound\Startup.wav">
+    <Content Include="Data\Techniques\DiffAdd.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\Sound\Yay.wav">
+    <Content Include="Data\Techniques\DiffAddAlpha.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Data\Textures\Earth.jpg" />
@@ -120,6 +123,9 @@
     <Content Include="Data\Textures\License.txt" />
     <Content Include="Data\Textures\Mars.jpg" />
     <Content Include="Data\Textures\Moon.jpg" />
+    <Content Include="Data\Textures\RocketColorTexture.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Properties\Default.rd.xml" />
   </ItemGroup>
   <ItemGroup>

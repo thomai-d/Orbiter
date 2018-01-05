@@ -46,7 +46,7 @@ namespace Orbiter.Components
 
         public void Fire()
         {
-            this.soundSource.Play(Application.ResourceCache.GetSound("Sound\\Arrow1.wav"));
+            this.soundSource.Play(Application.ResourceCache.GetSound("Sounds\\Arrow1.wav"));
 
             var rocketNode = this.rocketsNode.CreateChild();
             var rocket = rocketNode.CreateComponent<Rocket>();

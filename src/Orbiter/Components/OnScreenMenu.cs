@@ -95,7 +95,7 @@ namespace Orbiter.Components
 
             if (this.showMenuTcs == null)
             {
-                this.soundSource.Play(Application.ResourceCache.GetSound("Sound\\Yay.wav"));
+                this.soundSource.Play(Application.ResourceCache.GetSound("Sounds\\Yay.wav"));
                 this.showMenuTcs = new TaskCompletionSource<bool>(null, TaskCreationOptions.RunContinuationsAsynchronously);
             }
 
@@ -143,7 +143,7 @@ namespace Orbiter.Components
 
         private async void OnItemSelected(MenuItem item)
         {
-            this.soundSource.Play(Application.ResourceCache.GetSound("Sound\\Select.wav"));
+            this.soundSource.Play(Application.ResourceCache.GetSound("Sounds\\Select.wav"));
 
             item.Execute();
 

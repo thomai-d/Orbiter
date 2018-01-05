@@ -206,7 +206,7 @@ namespace Orbiter
                 throw new InvalidOperationException("SpatialMapping is not allowed");
 
             var sound = this.Scene.CreateComponent<SoundSource>();
-            sound.Play(this.ResourceCache.GetSound("Sound\\Startup.wav"));
+            sound.Play(this.ResourceCache.GetSound("Sounds\\Startup.wav"));
         }
 
         protected override void OnUpdate(float timeStep)

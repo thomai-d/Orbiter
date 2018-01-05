@@ -77,6 +77,7 @@ namespace Orbiter.Components
             this.geometryNode = this.Node.CreateChild("Geometry");
             var planeModel = this.geometryNode.CreateComponent<StaticModel>();
             planeModel.Model = this.Application.ResourceCache.GetModel("Models\\Rocket.mdl");
+            planeModel.Material = this.Application.ResourceCache.GetMaterial("Materials\\RocketMaterial.xml");
 
             // Gravity.
             this.rigidBody = this.Node.CreateComponent<RigidBody>();
@@ -90,14 +91,14 @@ namespace Orbiter.Components
             var engineParticleNode = this.Node.CreateChild("RocketEngine");
             this.engineParticleEmitter = engineParticleNode.CreateComponent<ParticleEmitter>();
             this.engineParticleEmitter.Enabled = false;
-            this.engineParticleEmitter.Effect = this.Application.ResourceCache.GetParticleEffect("Particle\\RocketEngine.xml");
+            this.engineParticleEmitter.Effect = this.Application.ResourceCache.GetParticleEffect("Particles\\RocketEngine.xml");
             engineParticleNode.Translate(new Vector3(0, 0, -0.03f));
 
             // Collision particles.
             var collisionParticleNode = this.Node.CreateChild("CollisionParticle");
             this.collisionParticleEmitter = collisionParticleNode.CreateComponent<ParticleEmitter>();
             this.collisionParticleEmitter.Enabled = false;
-            this.collisionParticleEmitter.Effect = this.Application.ResourceCache.GetParticleEffect("Particle\\Explosion.xml");
+            this.collisionParticleEmitter.Effect = this.Application.ResourceCache.GetParticleEffect("Particles\\Explosion.xml");
 
             // Collision detection.
             this.collisionShape = this.Node.CreateComponent<CollisionShape>();
@@ -106,7 +107,7 @@ namespace Orbiter.Components
             // Background sound.
             this.rocketSoundSource = this.Node.CreateComponent<SoundSource3D>();
             this.rocketSoundSource.SetDistanceAttenuation(0.0f, 2.0f, 1.0f);
-            var sound = this.Application.ResourceCache.GetSound("Sound\\Rocket.wav");
+            var sound = this.Application.ResourceCache.GetSound("Sounds\\Rocket.wav");
             sound.Looped = true;
             this.rocketSoundSource.Play(sound);
             this.rocketSoundSource.Gain = 0.1f;
@@ -114,12 +115,12 @@ namespace Orbiter.Components
 
             // Collision sound.
             this.collisionSoundSource = this.Node.CreateComponent<SoundSource3D>();
-            this.collisionSound = this.Application.ResourceCache.GetSound("Sound\\Collision.wav");
+            this.collisionSound = this.Application.ResourceCache.GetSound("Sounds\\Collision.wav");
             this.collisionSoundSource.SetDistanceAttenuation(0.0f, 5.0f, 3.0f);
 
             // Engine sound.
             this.engineSoundSource = this.Node.CreateComponent<SoundSource3D>();
-            this.engineSound = this.Application.ResourceCache.GetSound("Sound\\RocketEngine.wav");
+            this.engineSound = this.Application.ResourceCache.GetSound("Sounds\\RocketEngine.wav");
             this.engineSoundSource.SetDistanceAttenuation(0.0f, 5.0f, 1.0f);
             this.engineSound.Looped = true;
         }
