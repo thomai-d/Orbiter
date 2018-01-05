@@ -3,7 +3,7 @@ using System.Linq;
 using Orbiter.Components;
 using Urho;
 
-namespace Orbiter.Services
+namespace Orbiter.Components
 {
     public interface IFocusElement
     {
@@ -15,6 +15,8 @@ namespace Orbiter.Services
 
         void Manipulate(Vector3 relGlobal, Vector3 relCamera, Vector3 relCameraDiff);
 
+        void UpdateJoystickInfo(JoystickInfo oldState, JoystickInfo newState);
+
         MenuItem[] ContextMenu { get; }
     }
 
@@ -25,6 +27,8 @@ namespace Orbiter.Services
         public IFocusElement CurrentFocus { get; private set; }
 
         public IFocusElement DefaultFocus { get; set; }
+
+        private JoystickInfo lastJoystickInfo = new JoystickInfo();
 
         public override void OnAttachedToNode(Node node)
         {
@@ -38,6 +42,7 @@ namespace Orbiter.Services
 
         public void SetFocus(IFocusElement element)
         {
+            this.CurrentFocus?.UpdateJoystickInfo(this.lastJoystickInfo, new JoystickInfo());
             this.CurrentFocus?.LostFocus();
             this.CurrentFocus = element ?? this.DefaultFocus ?? throw new InvalidOperationException("CurrentFocus is null!");
             this.CurrentFocus.GotFocus();
@@ -52,6 +57,16 @@ namespace Orbiter.Services
 
             this.CurrentFocus.Tap();
             return true;
+        }
+
+        public bool UpdateJoystickInfo(JoystickInfo info)
+        {
+            if (this.CurrentFocus == null)
+                return false;
+
+            this.CurrentFocus.UpdateJoystickInfo(this.lastJoystickInfo, info);
+            this.lastJoystickInfo = info;
+            return false;
         }
 
         public void Manipulate(Vector3 relGlobal, Vector3 relCamera, Vector3 relCameraDiff)

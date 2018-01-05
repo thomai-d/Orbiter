@@ -1,5 +1,4 @@
 ﻿using Orbiter.Helpers;
-using Orbiter.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -121,6 +120,12 @@ namespace Orbiter.Components
 
             var dist = distance + relCameraDiff.Z * Constants.PlanetManipulateBoostFactor;
             this.distance = Math.Min(Math.Max(Constants.PlanetPlaceMinDistance, dist), Constants.PlanetPlaceMaxDistance);
+        }
+
+        public void UpdateJoystickInfo(JoystickInfo oldState, JoystickInfo newState)
+        {
+            if (oldState.IsButtonDown(Button.B3, newState))
+                this.PlacePlanet();
         }
     }
 }

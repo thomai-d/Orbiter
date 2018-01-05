@@ -7,7 +7,6 @@ using Urho.SharpReality;
 using Urho.Shapes;
 using Urho.Resources;
 using Urho.Gui;
-using Orbiter.Services;
 using Orbiter.Components;
 using System.Diagnostics;
 using Urho.Physics;
@@ -158,6 +157,14 @@ namespace Orbiter
             }
         }
 
+        public void UpdateJoystickInfo(JoystickInfo oldState, JoystickInfo newState)
+        {
+            var wasDown = oldState.IsButtonDown(Components.Button.Start);
+            var isDown = newState.IsButtonDown(Components.Button.Start);
+            if (!wasDown && isDown)
+                this.rocketFactory.Fire();
+        }
+
         // Protected.
 
         protected override async void Start()
@@ -182,11 +189,11 @@ namespace Orbiter
 
             this.onScreenMenu = this.Scene.CreateComponent<OnScreenMenu>();
 
-            this.joystickServer = this.Scene.CreateComponent<JoystickServer>();
-
             this.focusManager = this.Scene.CreateComponent<FocusManager>();
             this.focusManager.DefaultFocus = this;
             this.focusManager.SetFocus(this);
+
+            this.joystickServer = this.Scene.CreateComponent<JoystickServer>();
 
             this.planetFactory = this.Scene.CreateComponent<PlanetFactory>();
 
@@ -197,13 +204,13 @@ namespace Orbiter
             var listener = this.LeftCamera.Node.CreateComponent<SoundListener>();
             Audio.Listener = listener;
 
-            // Spatial mapping.
-            this.spatialMaterial = new Material();
-            this.spatialMaterial.SetTechnique(0, CoreAssets.Techniques.NoTextureUnlitVCol, 1, 1);
-            this.environmentNode = this.Scene.CreateChild("Environment");
-            var spatialMappingAllowed = await StartSpatialMapping(new Vector3(3, 3, 2), 1);
-            if (!spatialMappingAllowed)
-                throw new InvalidOperationException("SpatialMapping is not allowed");
+            // TODO: Spatial mapping. Way too slow
+            //this.spatialMaterial = new Material();
+            //this.spatialMaterial.SetTechnique(0, CoreAssets.Techniques.NoTextureUnlitVCol, 1, 1);
+            //this.environmentNode = this.Scene.CreateChild("Environment");
+            //var spatialMappingAllowed = await StartSpatialMapping(new Vector3(3, 3, 2), 1);
+            //if (!spatialMappingAllowed)
+            //    throw new InvalidOperationException("SpatialMapping is not allowed");
 
             var sound = this.Scene.CreateComponent<SoundSource>();
             sound.Play(this.ResourceCache.GetSound("Sounds\\Startup.wav"));

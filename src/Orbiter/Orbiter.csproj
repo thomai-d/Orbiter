@@ -54,6 +54,7 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Components\JoystickInfo.cs" />
     <Compile Include="Components\JoystickServer.cs" />
     <Compile Include="Components\Planet.cs" />
     <Compile Include="Components\PlanetFactory.cs" />

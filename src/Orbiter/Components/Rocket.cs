@@ -10,7 +10,7 @@ using Urho.Physics;
 
 namespace Orbiter.Components
 {
-    public class Rocket : Component
+    public class Rocket : Component, IFocusElement
     {
         private Node cameraNode;
         private Node geometryNode;
@@ -27,12 +27,16 @@ namespace Orbiter.Components
         private ParticleEmitter collisionParticleEmitter;
         private Sound collisionSound;
 
+        private JoystickInfo joyState = new JoystickInfo();
+
         private bool isCollided = false;
 
         public Rocket()
         {
             this.ReceiveSceneUpdates = true;
         }
+
+        public MenuItem[] ContextMenu => new MenuItem[0];
 
         public async void OnCollision()
         {
@@ -155,24 +159,13 @@ namespace Orbiter.Components
         {
             // TODO rotation should be dependent on time.
 
-            var joyState = this.joystickServer.GetJoystick(0);
-            this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitX, -joyState.Y * 2.0f), TransformSpace.Local);
-            this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitZ, -joyState.X * 2.0f), TransformSpace.Local);
-            if (joyState.IsButtonDown(Button0.L)) this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitY, -2.0f), TransformSpace.Local);
-            if (joyState.IsButtonDown(Button0.R)) this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitY, 2.0f), TransformSpace.Local);
+            this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitX, -this.joyState.Y1 * 2.0f), TransformSpace.Local);
+            this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitZ, -this.joyState.X1 * 2.0f), TransformSpace.Local);
+            this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitY, -this.joyState.X2 * 2.0f), TransformSpace.Local);
 
-            if (joyState.IsButtonDown(Button0.B))
+            if (this.joyState.IsButtonDown(Button.R2))
             {
                 newGravity += (this.Node.WorldRotation * Vector3.Forward) * Constants.RocketAccelerationVelocity;
-                if (!this.engineSoundSource.Playing)
-                {
-                    this.engineSoundSource.Play(this.engineSound);
-                    this.engineParticleEmitter.Enabled = true;
-                }
-            }
-            else if (joyState.IsButtonDown(Button0.Y))
-            {
-                newGravity -= (this.Node.WorldRotation * Vector3.Forward) * Constants.RocketAccelerationVelocity;
                 if (!this.engineSoundSource.Playing)
                 {
                     this.engineSoundSource.Play(this.engineSound);
@@ -185,7 +178,7 @@ namespace Orbiter.Components
                 this.engineParticleEmitter.Enabled = false;
             }
 
-            if (joyState.IsButtonDown(Button0.X))
+            if (this.joyState.IsButtonDown(Button.R1))
             {
                 newGravity = Vector3.Zero;
                 rigidBody.SetLinearVelocity(Vector3.Zero);
@@ -202,6 +195,27 @@ namespace Orbiter.Components
             var v = rigidBody.LinearVelocity;
             this.rocketSoundSource.Frequency = this.soundBaseFrequency * Physics.Doppler(c, o, v);
             this.engineSoundSource.Frequency = this.soundBaseFrequency * Physics.Doppler(c, o, v);
+        }
+
+        public void GotFocus()
+        {
+        }
+
+        public void LostFocus()
+        {
+        }
+
+        public void Tap()
+        {
+        }
+
+        public void Manipulate(Vector3 relGlobal, Vector3 relCamera, Vector3 relCameraDiff)
+        {
+        }
+
+        public void UpdateJoystickInfo(JoystickInfo oldState, JoystickInfo newState)
+        {
+            this.joyState = newState;
         }
     }
 }

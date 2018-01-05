@@ -4,67 +4,29 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Urho;
 using Windows.Networking.Sockets;
 
 namespace Orbiter.Components
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct JoystickInfo
-    {
-        public byte ControllerId;
-        public float X;
-        public float Y;
-        public byte Buttons0;
-        public byte Buttons1;
-
-        public bool IsButtonDown(Button0 b)
-        {
-            if (b == Button0.A) return (this.Buttons0 & (int)b) > 0;
-            if (b == Button0.B) return (this.Buttons0 & (int)b) > 0;
-            if (b == Button0.X) return (this.Buttons0 & (int)b) > 0;
-            if (b == Button0.Y) return (this.Buttons0 & (int)b) > 0;
-            if (b == Button0.L) return (this.Buttons0 & (int)b) > 0;
-            if (b == Button0.R) return (this.Buttons0 & (int)b) > 0;
-            return false;
-        }
-
-        public bool IsButtonDown(Button1 b)
-        {
-            if (b == Button1.Select) return (this.Buttons1 & (int)b) > 0;
-            if (b == Button1.Start) return (this.Buttons1 & (int)b) > 0;
-            return false;
-        }
-    }
-
-    public enum Button0
-    {
-        X = 1,
-        A = 2,
-        B = 4,
-        Y = 8,
-        L = 16,
-        R = 64,
-    }
-
-    // TODO
-    public enum Button1
-    {
-        Select = 1,
-        Start = 2,
-    }
-
     public class JoystickServer : Component
     {
         public const short Port = 4263;
 
         private readonly JoystickInfo[] states = new JoystickInfo[256];
         private readonly object stateLock = new object();
+        private FocusManager focusManager;
+        private SynchronizationContext syncContext;
         private StreamSocketListener socket;
 
         public override async void OnAttachedToNode(Node node)
         {
             base.OnAttachedToNode(node);
+
+            this.focusManager = this.Scene.GetComponent<FocusManager>();
+
+            this.syncContext = SynchronizationContext.Current;
 
             this.socket = new StreamSocketListener();
             this.socket.ConnectionReceived += this.OnConnectionReceived;
@@ -87,11 +49,12 @@ namespace Orbiter.Components
                     var joystickInfo = ByteHelper.FromBytes<JoystickInfo>(buffer);
                     lock (this.stateLock)
                     {
+                        this.syncContext.Post(x => { this.focusManager.UpdateJoystickInfo(joystickInfo); }, false);
                         this.states[joystickInfo.ControllerId] = joystickInfo;
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
             Debug.WriteLine($"Connection to {args.Socket.Information.RemoteAddress} lost");
             }
