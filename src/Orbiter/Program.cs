@@ -11,6 +11,7 @@ using Orbiter.Components;
 using System.Diagnostics;
 using Urho.Physics;
 using Urho.Audio;
+using System.Threading.Tasks;
 
 namespace Orbiter
 {
@@ -34,6 +35,7 @@ namespace Orbiter
         private JoystickServer joystickServer;
         private RocketFactory rocketFactory;
         private Grid grid;
+        private Node splashNode;
 
         // Variables needed for manipulation calculation.
         private Vector3 lastManipulationVector = Vector3.Zero;
@@ -212,19 +214,70 @@ namespace Orbiter
             //if (!spatialMappingAllowed)
             //    throw new InvalidOperationException("SpatialMapping is not allowed");
 
-            var sound = this.Scene.CreateComponent<SoundSource>();
-            sound.Play(this.ResourceCache.GetSound("Sounds\\Startup.wav"));
+            await ShowSplash();
         }
 
         protected override void OnUpdate(float timeStep)
         {
             base.OnUpdate(timeStep);
 
-            this.FocusWorldPoint = Raycast()?.Node?.WorldPosition 
+            this.FocusWorldPoint = (this.focusManager.CurrentFocus as Node)?.WorldPosition
+                ?? Raycast()?.Node?.WorldPosition 
                 ?? LeftCamera.Node.WorldPosition + LeftCamera.Node.WorldRotation * Vector3.Forward * 2;
         }
 
         // Private.
+
+        private async Task ShowSplash()
+        {
+            var soundSource = this.Scene.CreateComponent<SoundSource>();
+
+            this.splashNode = this.Scene.CreateChild("Splash");
+            this.splashNode.CreateComponent<StayInFrontOfCamera>();
+            var sound = this.ResourceCache.GetSound("Sounds\\Departure.wav");
+            sound.Looped = true;
+            sound.SetLoop(sound.DataSize / 2, sound.DataSize);
+            soundSource.Gain = 0.3f;
+            soundSource.Play(sound);
+
+            var orbiterTextNode = this.splashNode.CreateChild("Text");
+            var orbiterText = orbiterTextNode.CreateComponent<Text3D>();
+            orbiterText.HorizontalAlignment = HorizontalAlignment.Center;
+            orbiterText.VerticalAlignment = VerticalAlignment.Top;
+            orbiterText.ViewMask = 0x80000000;
+            orbiterText.Text = "ORBITER";
+            orbiterText.SetFont(CoreAssets.Fonts.AnonymousPro, 28);
+            orbiterText.SetColor(Color.White);
+            orbiterTextNode.SetScale(0.3f);
+
+            var joystickTextNode = this.splashNode.CreateChild("Text");
+            joystickTextNode.Translate(new Vector3(0, -0.1f, 0));
+            var joystickText = joystickTextNode.CreateComponent<Text3D>();
+            joystickText.HorizontalAlignment = HorizontalAlignment.Center;
+            joystickText.VerticalAlignment = VerticalAlignment.Top;
+            joystickText.ViewMask = 0x80000000;
+            joystickText.Text = "Waiting for joystick to connect...";
+            joystickText.SetFont(CoreAssets.Fonts.AnonymousPro, 24);
+            joystickText.SetColor(Color.White);
+            joystickTextNode.SetScale(0.08f);
+
+            await this.WaitForJoystick();
+            this.splashNode.Remove();
+
+            soundSource.Stop();
+            soundSource.Gain = 1.0f;
+            soundSource.Play(this.ResourceCache.GetSound("Sounds\\Startup.wav"));
+        }
+
+        private async Task WaitForJoystick()
+        {
+            while (!this.joystickServer.IsJoystickAvailable)
+            {
+                await Task.Delay(1000);
+            }
+
+            return;
+        }
 
         private void OnCollisionStart(PhysicsCollisionStartEventArgs obj)
         {

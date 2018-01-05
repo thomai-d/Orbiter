@@ -33,9 +33,12 @@ namespace Orbiter.Components
             await this.socket.BindServiceNameAsync(Port.ToString());
         }
 
+        public bool IsJoystickAvailable { get; private set; }
+
         private async void OnConnectionReceived(StreamSocketListener sender, StreamSocketListenerConnectionReceivedEventArgs args)
         {
             Debug.WriteLine($"Connected to {args.Socket.Information.RemoteAddress}");
+            this.IsJoystickAvailable = true;
 
             var stream = args.Socket.InputStream.AsStreamForRead();
 
@@ -56,15 +59,8 @@ namespace Orbiter.Components
             }
             catch (Exception)
             {
-            Debug.WriteLine($"Connection to {args.Socket.Information.RemoteAddress} lost");
-            }
-        }
-
-        public JoystickInfo GetJoystick(byte id)
-        {
-            lock (this.stateLock)
-            {
-                return this.states[id];
+                Debug.WriteLine($"Connection to {args.Socket.Information.RemoteAddress} lost");
+                this.IsJoystickAvailable = false;
             }
         }
     }

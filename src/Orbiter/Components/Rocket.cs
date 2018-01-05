@@ -160,8 +160,8 @@ namespace Orbiter.Components
             // TODO rotation should be dependent on time.
 
             this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitX, -this.joyState.Y1 * 2.0f), TransformSpace.Local);
-            this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitZ, -this.joyState.X1 * 2.0f), TransformSpace.Local);
-            this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitY, -this.joyState.X2 * 2.0f), TransformSpace.Local);
+            this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitZ, -this.joyState.X2 * 2.0f), TransformSpace.Local);
+            this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitY, this.joyState.X1 * 2.0f), TransformSpace.Local);
 
             if (this.joyState.IsButtonDown(Button.R2))
             {

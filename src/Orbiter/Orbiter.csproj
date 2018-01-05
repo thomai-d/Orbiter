@@ -60,6 +60,7 @@
     <Compile Include="Components\PlanetFactory.cs" />
     <Compile Include="Components\Rocket.cs" />
     <Compile Include="Components\RocketFactory.cs" />
+    <Compile Include="Components\StayInFrontOfCamera.cs" />
     <Compile Include="Components\VoiceRecognition.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Helpers\ByteHelper.cs" />
@@ -91,6 +92,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Data\Sounds\Create.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\Sounds\Departure.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Data\Sounds\Rocket.wav">
