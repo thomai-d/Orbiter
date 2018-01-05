@@ -221,7 +221,7 @@ namespace Orbiter.Components
 
         public void UpdateJoystickInfo(JoystickInfo oldState, JoystickInfo newState)
         {
-            if (oldState.IsButtonDown(Button.Start, newState))
+            if (oldState.IsButtonDown(Button.B1, newState))
             {
                 this.OnCollision();
             }
