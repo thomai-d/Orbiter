@@ -144,25 +144,12 @@ namespace Orbiter.Components
 
             this.ApplyDopplerEffect();
 
-            this.HandleOrbiting();
-
             var newGravity = Vector3.Zero;
             newGravity = this.ApplyGravity(newGravity);
             newGravity = this.ApplyJoystickInput(newGravity);
             rigidBody.GravityOverride = newGravity;
         }
 
-        private void HandleOrbiting()
-        {
-            if (!this.joyState.IsButtonDown(Button.B4))
-                return;
-
-            var (nearestPlanet, distance) = this.planetFactory.PlanetNodes.GetMin(planet => Vector3.Distance(planet.WorldPosition, this.Node.WorldPosition));
-            if (nearestPlanet == null || distance > Constants.MaxOrbit)
-                return;
-
-            this.Node.LookAt(nearestPlanet.WorldPosition, Vector3.Up, TransformSpace.World);
-        }
 
         private Vector3 ApplyGravity(Vector3 newGravity)
         {
@@ -207,10 +194,24 @@ namespace Orbiter.Components
                 this.engineParticleEmitter.Enabled = false;
             }
 
-            if (this.joyState.IsButtonDown(Button.R1))
+            // Look at velocity.
+            if (this.joyState.IsButtonDown(Button.B2))
             {
-                newGravity = Vector3.Zero;
-                rigidBody.SetLinearVelocity(Vector3.Zero);
+                this.Node.LookAt(this.Node.WorldPosition + this.rigidBody.LinearVelocity, Vector3.Up, TransformSpace.World);
+            }
+
+            // Look against velocity.
+            if (this.joyState.IsButtonDown(Button.B1))
+            {
+                this.Node.LookAt(this.Node.WorldPosition - this.rigidBody.LinearVelocity, Vector3.Up, TransformSpace.World);
+            }
+
+            // Orbiting.
+            if (this.joyState.IsButtonDown(Button.B4))
+            {
+                var (nearestPlanet, distance) = this.planetFactory.PlanetNodes.GetMin(planet => Vector3.Distance(planet.WorldPosition, this.Node.WorldPosition));
+                if (nearestPlanet != null &&  distance < Constants.MaxOrbit)
+                    this.Node.LookAt(nearestPlanet.WorldPosition, Vector3.Up, TransformSpace.World);
             }
 
             return newGravity;
@@ -244,7 +245,7 @@ namespace Orbiter.Components
 
         public void UpdateJoystickInfo(JoystickInfo oldState, JoystickInfo newState)
         {
-            if (oldState.IsButtonDown(Button.B1, newState))
+            if (oldState.IsButtonDown(Button.Start, newState))
             {
                 this.OnCollision();
             }
