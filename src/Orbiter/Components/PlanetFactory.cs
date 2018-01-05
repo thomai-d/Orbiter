@@ -29,6 +29,7 @@ namespace Orbiter.Components
         private SoundSource soundSource;
         private FocusManager focusManager;
         private MovingAverage averageLocation = new MovingAverage(25);
+        private JoystickInfo joystickInfo;
 
         public PlanetFactory()
         {
@@ -65,7 +66,7 @@ namespace Orbiter.Components
         {
             this.tempPlanetNode = null;
             this.soundSource.Play(Application.ResourceCache.GetSound("Sounds\\Create.wav"));
-            this.focusManager.SetFocus(null);
+            this.focusManager.ReleaseFocus(this);
         }
 
         public void RemovePlanets()
@@ -79,6 +80,8 @@ namespace Orbiter.Components
 
             if (this.tempPlanetNode == null)
                 return;
+            
+            this.distance = Math.Min(Math.Max(Constants.PlanetPlaceMinDistance, this.distance - this.joystickInfo.Y1 * 0.01f), Constants.PlanetPlaceMaxDistance);
             
             var rotation = this.cameraNode.Rotation;
             var headPosition = this.cameraNode.WorldPosition;
@@ -126,6 +129,8 @@ namespace Orbiter.Components
         {
             if (oldState.IsButtonDown(Button.B3, newState))
                 this.PlacePlanet();
+
+            this.joystickInfo = newState;
         }
     }
 }

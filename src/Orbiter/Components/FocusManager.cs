@@ -50,6 +50,17 @@ namespace Orbiter.Components
             this.onScreenMenu.SetContextMenu(this.CurrentFocus.ContextMenu);
         }
 
+        public void ReleaseFocus(IFocusElement element)
+        {
+            if (this.IsFocused(element))
+                this.SetFocus(null);
+        }
+
+        public bool IsFocused(IFocusElement element)
+        {
+            return this.CurrentFocus?.Equals(element) ?? false;
+        }
+
         public bool HandleTap()
         {
             if (this.CurrentFocus == null)

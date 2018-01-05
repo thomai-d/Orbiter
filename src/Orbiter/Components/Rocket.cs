@@ -17,6 +17,7 @@ namespace Orbiter.Components
         private RigidBody rigidBody;
         private PlanetFactory planetFactory;
         private JoystickServer joystickServer;
+        private FocusManager focusManager;
         private SoundSource3D rocketSoundSource;
         private float soundBaseFrequency;
         private SoundSource3D collisionSoundSource;
@@ -36,12 +37,14 @@ namespace Orbiter.Components
             this.ReceiveSceneUpdates = true;
         }
 
-        public MenuItem[] ContextMenu => new MenuItem[0];
+        public MenuItem[] ContextMenu => new[] { new MenuItem("Destroy", () => this.OnCollision(), "destroy") };
 
         public async void OnCollision()
         {
             if (this.isCollided)
                 return;
+
+            this.focusManager.ReleaseFocus(this);
 
             // Stop animations / sounds / gravity.
             this.isCollided = true;
@@ -73,6 +76,9 @@ namespace Orbiter.Components
 
             this.joystickServer = this.Scene.GetComponent<JoystickServer>()
                 ?? throw new InvalidOperationException("'JoystickServer' not found");
+
+            this.focusManager = this.Scene.GetComponent<FocusManager>()
+                ?? throw new InvalidOperationException("'FocusManager' not found");
 
             this.cameraNode = this.Scene.GetChild("MainCamera", false) 
                 ?? throw new InvalidOperationException("'MainCamera' not found");
@@ -160,8 +166,8 @@ namespace Orbiter.Components
             // TODO rotation should be dependent on time.
 
             this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitX, -this.joyState.Y1 * 2.0f), TransformSpace.Local);
-            this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitZ, -this.joyState.X2 * 2.0f), TransformSpace.Local);
-            this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitY, this.joyState.X1 * 2.0f), TransformSpace.Local);
+            this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitZ, -this.joyState.X1 * 2.0f), TransformSpace.Local);
+            this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitY, this.joyState.X2 * 2.0f), TransformSpace.Local);
 
             if (this.joyState.IsButtonDown(Button.R2))
             {
@@ -189,12 +195,12 @@ namespace Orbiter.Components
 
         private void ApplyDopplerEffect()
         {
-            // TODO: Broken!
             var o = this.Node.WorldPosition;
             var c = this.cameraNode.WorldPosition;
             var v = rigidBody.LinearVelocity;
-            this.rocketSoundSource.Frequency = this.soundBaseFrequency * Physics.Doppler(c, o, v);
-            this.engineSoundSource.Frequency = this.soundBaseFrequency * Physics.Doppler(c, o, v);
+            var dopplerFactor = Physics.Doppler(c, o, v);
+            this.rocketSoundSource.Frequency = this.soundBaseFrequency * dopplerFactor;
+            this.engineSoundSource.Frequency = this.soundBaseFrequency * dopplerFactor;
         }
 
         public void GotFocus()
@@ -215,6 +221,11 @@ namespace Orbiter.Components
 
         public void UpdateJoystickInfo(JoystickInfo oldState, JoystickInfo newState)
         {
+            if (oldState.IsButtonDown(Button.Start, newState))
+            {
+                this.OnCollision();
+            }
+
             this.joyState = newState;
         }
     }

@@ -38,7 +38,7 @@ namespace Orbiter
         /// <summary>
         /// Rocket start position relative to camera.
         /// </summary>
-        public static readonly Vector3 RocketRelativeStartOffset = new Vector3(0, 0, 0.5f);
+        public static readonly Vector3 RocketRelativeLaunchOffset = new Vector3(0, -0.05f, 0.5f);
 
         /// <summary>
         /// Boost factor for planet manipulation.

@@ -50,12 +50,10 @@ namespace Orbiter.Components
 
         public void Fire()
         {
-            this.soundSource.Play(Application.ResourceCache.GetSound("Sounds\\Arrow1.wav"));
-
             var rocketNode = this.rocketsNode.CreateChild();
             var rocket = rocketNode.CreateComponent<Rocket>();
 
-            rocketNode.SetWorldPosition(this.cameraNode.WorldPosition + this.cameraNode.WorldRotation * Constants.RocketRelativeStartOffset);
+            rocketNode.SetWorldPosition(this.cameraNode.WorldPosition + this.cameraNode.WorldRotation * Constants.RocketRelativeLaunchOffset);
             rocketNode.SetWorldRotation(this.cameraNode.WorldRotation);
             this.focusManager.SetFocus(rocket);
         }

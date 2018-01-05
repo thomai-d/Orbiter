@@ -161,10 +161,11 @@ namespace Orbiter
 
         public void UpdateJoystickInfo(JoystickInfo oldState, JoystickInfo newState)
         {
-            var wasDown = oldState.IsButtonDown(Components.Button.Start);
-            var isDown = newState.IsButtonDown(Components.Button.Start);
-            if (!wasDown && isDown)
+            if (oldState.IsButtonDown(Components.Button.B3, newState))
                 this.rocketFactory.Fire();
+
+            if (oldState.IsButtonDown(Components.Button.B1, newState))
+                this.planetFactory.AddNewPlanet();
         }
 
         // Protected.
