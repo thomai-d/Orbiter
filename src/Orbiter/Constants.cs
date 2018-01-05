@@ -55,6 +55,12 @@ namespace Orbiter
         /// <summary>
         /// Rocket acceleration.
         /// </summary>
-        public static float RocketAccelerationVelocity = 0.3f;
+        public const float RocketAccelerationVelocity = 0.5f;
+        public const float RocketAccelerationVelocityMax = 1.0f;
+
+        /// <summary>
+        /// Maximum orbit radius.
+        /// </summary>
+        public const double MaxOrbit = 2.0f;
     }
 }

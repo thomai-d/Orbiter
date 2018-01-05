@@ -144,10 +144,24 @@ namespace Orbiter.Components
 
             this.ApplyDopplerEffect();
 
+            this.HandleOrbiting();
+
             var newGravity = Vector3.Zero;
             newGravity = this.ApplyGravity(newGravity);
             newGravity = this.ApplyJoystickInput(newGravity);
             rigidBody.GravityOverride = newGravity;
+        }
+
+        private void HandleOrbiting()
+        {
+            if (!this.joyState.IsButtonDown(Button.B4))
+                return;
+
+            var (nearestPlanet, distance) = this.planetFactory.PlanetNodes.GetMin(planet => Vector3.Distance(planet.WorldPosition, this.Node.WorldPosition));
+            if (nearestPlanet == null || distance > Constants.MaxOrbit)
+                return;
+
+            this.Node.LookAt(nearestPlanet.WorldPosition, Vector3.Up, TransformSpace.World);
         }
 
         private Vector3 ApplyGravity(Vector3 newGravity)
@@ -169,7 +183,16 @@ namespace Orbiter.Components
             this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitZ, -this.joyState.X1 * 2.0f), TransformSpace.Local);
             this.Node.Rotate(Quaternion.FromAxisAngle(Vector3.UnitY, this.joyState.X2 * 2.0f), TransformSpace.Local);
 
-            if (this.joyState.IsButtonDown(Button.R2))
+            if (this.joyState.IsButtonDown(Button.L2))
+            {
+                newGravity += (this.Node.WorldRotation * Vector3.Forward) * Constants.RocketAccelerationVelocityMax;
+                if (!this.engineSoundSource.Playing)
+                {
+                    this.engineSoundSource.Play(this.engineSound);
+                    this.engineParticleEmitter.Enabled = true;
+                }
+            }
+            else if (this.joyState.IsButtonDown(Button.R2))
             {
                 newGravity += (this.Node.WorldRotation * Vector3.Forward) * Constants.RocketAccelerationVelocity;
                 if (!this.engineSoundSource.Playing)

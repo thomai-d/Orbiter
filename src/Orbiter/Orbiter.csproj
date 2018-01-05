@@ -109,6 +109,7 @@
     <Compile Include="Components\VoiceRecognition.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Helpers\ByteHelper.cs" />
+    <Compile Include="Helpers\EnumerableExtension.cs" />
     <Compile Include="Helpers\MovingAverage.cs" />
     <Compile Include="Helpers\Physics.cs" />
     <Compile Include="Program.cs" />
